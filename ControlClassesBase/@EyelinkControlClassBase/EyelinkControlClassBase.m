@@ -18,9 +18,9 @@ classdef EyelinkControlClassBase < handle
     end
     
     methods
-        function eyelink = EyelinkControlClassBaseBase(status)
+        function eyelink = EyelinkControlClassBaseBase(status) %#ok<STOUT>
             if nargin > 0 && status
-                eyelink.init;
+                eyelink.init; %#ok<NODEF>
             end
         end
         
@@ -32,8 +32,6 @@ classdef EyelinkControlClassBase < handle
             if isempty(eyelink.edfname)
                 eyelink.edfname = sprintf('%.6d.edf',randi(10^6));
             end
-            eyelink.screen
-            eyelink.trial
             eyelink.settings = EyelinkInitDefaults(eyelink.screen.win);
             eyelink.settings.backgroundcolour = eyelink.screen.backcolour;
             eyelink.settings.calib_sound = audioread(eyelink.calib_sound)';
@@ -60,7 +58,7 @@ classdef EyelinkControlClassBase < handle
             % exit program if this fails.
             if Eyelink('Initialize','PsychEyelinkDispatchCallback') < 0
                 warning('Unable to connect to eyetracking host computer, we do without eyetracker');
-                Eyelink('InitializeDummy','PsychEyelinkDispatchCallback')
+                Eyelink('InitializeDummy','PsychEyelinkDispatchCallback');
                 eyelink.status = 2;
             end
             
@@ -68,7 +66,6 @@ classdef EyelinkControlClassBase < handle
             fprintf('Running experiment on a ''%s'' tracker.\n', vs );
             
             % open file to record data to
-            eyelink.edfname
             eyelink.edf = Eyelink('Openfile', eyelink.edfname, 1);
 
             %checks if edf file was created ok
@@ -132,7 +129,7 @@ classdef EyelinkControlClassBase < handle
         function calibrate(eyelink)
             if eyelink.status
                 eyelink.screen.fill(eyelink.settings.backgroundcolour)
-                eyelink.screen.flip(0,1)
+                eyelink.screen.flip(0,1);
     %             el.calAnimationTargetFilename = [pwd '/' calMovieName];
     %         el.backgroundcolour           = grey;
             % You must call this function to apply the changes made to the el structure above
@@ -160,9 +157,9 @@ classdef EyelinkControlClassBase < handle
             % download data file
                 Eyelink('SetOfflineMode')
                 fprintf('Receiving data file ''%s''\n', eyelink.edfname );
-                status=Eyelink('ReceiveFile');
-                if status > 0
-                    fprintf('ReceiveFile status %d\n', status);
+                statusEdf=Eyelink('ReceiveFile');
+                if statusEdf > 0
+                    fprintf('ReceiveFile status %d\n', statusEdf);
                 end
                 if 2==exist(eyelink.edfname, 'file')
                     movefile(eyelink.edfname,[eyelink.edffolder '/' eyelink.edfname])
@@ -170,6 +167,7 @@ classdef EyelinkControlClassBase < handle
                 end
             catch rdf
                 warning('Problem receiving data file ''%s''\n', eyelink.edfname );
+                warning(rdf.message);
             end
         end
     end
