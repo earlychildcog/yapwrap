@@ -2,8 +2,8 @@ function [flagResult, time] = attgetPart(xp)
 flagResult = -10;
 xp.eyelink.startrec;
 while flagResult < 0
-    [flagResult, time] = playPretrial(xp);
-    % [flagResult, time] = playPretrialVideo(xp);
+    % [flagResult, time] = playPretrial(xp);
+    [flagResult, time] = playPretrialVideo(xp);
     if flagResult == -1     % recalibrate
         xp.trial.varValue.result = flagResult;
         xp.eyelink.stoprec;
