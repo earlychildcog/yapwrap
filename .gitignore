@@ -1,0 +1,22 @@
+# temp matlab files
+*.asv
+*.m~
+*~
+
+# debug logs
+logs/debug/*.log
+
+# other stuff that may appear
+*.gif
+*.psd
+old*
+
+# data files
+*.edf
+data
+logs
+
+# macos config files
+.DS_Store
+*/.DS_Store
+
