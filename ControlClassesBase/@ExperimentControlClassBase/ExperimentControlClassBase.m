@@ -18,7 +18,6 @@ classdef ExperimentControlClassBase < handle
         eegon           = false;
         settings        = struct;
 
-
         config          = 'default_config'
         
 %         log                 {mustBeA(log,'LogControlClass')}        % log settings
@@ -124,6 +123,7 @@ classdef ExperimentControlClassBase < handle
             
             xp.eyelink.screen = xp.screen;
             xp.eyelink.trial = xp.trial;
+            xp.eyelink.calib_pahandle = xp.sound.pahandle;
             xp.log.trial = xp.trial;
         end
 

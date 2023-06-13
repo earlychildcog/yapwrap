@@ -15,7 +15,7 @@ if keyIsDown
 
     % skip trial
     if any(keys == key.escape)
-        if isempty(timeLastEscape) || GetSecs - timeLastEscape > 0.2
+        if isempty(timeLastEscape) || GetSecs - timeLastEscape > 0.5
             timeLastEscape = keyOnset;
             flagResult   = -3;
             xp.eyelink.write('Pressed escape key - skip trial @%.3fsec',keyOnset)

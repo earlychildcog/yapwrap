@@ -48,7 +48,7 @@ classdef LogControlClassBase < handle
             end
             log.header = ["session", string(log.trial.varNames)];
             log.fid = fopen(fullfile(log.folder,log.filename) , 'wt' );
-            cellfun(@(x)fprintf(log.fid, '%s\t',x),log.header)
+            cellfun(@(x)fprintf(log.fid, '%s\t',x),log.header);
         end
         function result = write(log, line)      % update the log
             if log.status
@@ -65,7 +65,7 @@ classdef LogControlClassBase < handle
                 line = cellfun(@string,line);        % convert $line contents to strings
                 try
                     fprintf(log.fid, '\n');
-                    arrayfun(@(x)fprintf(log.fid, '%s\t',x),line)
+                    arrayfun(@(x)fprintf(log.fid, '%s\t',x),line);
                 catch
                     result = false;
                     warning('Writing to log file failed: unknown error')

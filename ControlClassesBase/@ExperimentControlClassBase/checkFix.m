@@ -41,7 +41,7 @@ rectPadded = xp.screen.rect(:,whichrect) + [-1 -1 1 1]'*paddingPix;
 screenRect = all(rectPadded < [0; 0; Inf; Inf] & rectPadded > [-Inf; -Inf; xp.screen.width; xp.screen.height]);
 if any(screenRect)
     rectPadded(:,screenRect) = [0; 0; xp.screen.width; xp.screen.height];
-    idScreenRect = find(any(screenRect));
+    idScreenRect = find(screenRect,1);          % we assume there is only one rect that ids as screen
 else
     rectPadded = [rectPadded, [0; 0; xp.screen.width; xp.screen.height]];
     nROI = nROI + 1;   

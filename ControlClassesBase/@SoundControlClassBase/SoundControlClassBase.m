@@ -32,7 +32,7 @@ classdef SoundControlClassBase < handle
             sound.status = true;
             InitializePsychSound(1);
             if IsLinux
-                idAudiodevice = getIdSoundDevice;
+                idAudiodevice = sound.getIdSoundDevice;
             else
                 idAudiodevice = [];
             end
