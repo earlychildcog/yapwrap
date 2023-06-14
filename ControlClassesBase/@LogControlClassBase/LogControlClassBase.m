@@ -61,8 +61,8 @@ classdef LogControlClassBase < handle
                     result = false;
                     return
                 end
-
-                line = cellfun(@string,line);        % convert $line contents to strings
+                line(cellfun(@islogical,line)) = cellfun(@double,line(cellfun(@islogical,line)), UniformOutput=false); % convert logical values to numerical
+                line = cellfun(@string,line);        % convert `line` contents to strings
                 try
                     fprintf(log.fid, '\n');
                     arrayfun(@(x)fprintf(log.fid, '%s\t',x),line);

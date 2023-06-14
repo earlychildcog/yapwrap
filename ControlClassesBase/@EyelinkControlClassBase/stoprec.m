@@ -16,6 +16,8 @@ if eyelink.status
         thisvalue = eyelink.trial.varValue.(thisvarname); % in the future we change this to a trial property (all values computed in the end or beginning of trial, or both)
         if isnumeric(thisvalue)
             thisvalue = num2str(thisvalue);
+        elseif islogical(thisvalue)
+            thisvalue = num2str(double(thisvalue));
         end
         thismessage = sprintf('!V TRIAL_VAR %s %s', thisvarname, thisvalue);
         eyelink.write(thismessage);       

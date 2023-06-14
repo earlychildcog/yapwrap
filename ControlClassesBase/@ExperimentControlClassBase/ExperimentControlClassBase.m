@@ -15,7 +15,7 @@ classdef ExperimentControlClassBase < handle
         condList        = {};
         prestype        = {};
         debug           = false;
-        eegon           = false;
+
         settings        = struct;
 
         config          = 'default_config'

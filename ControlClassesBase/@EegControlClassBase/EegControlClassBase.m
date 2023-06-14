@@ -85,6 +85,21 @@ classdef EegControlClassBase < handle
                 eeg.eventReset;
             end
         end
+        function eventSendAll(eeg, varvalues)
+            % send all variables at once
+            arguments
+                eeg         EegControlClassBase
+                varvalues   struct
+            end
+            if eeg.status
+                names = fieldnames(varvalues);
+                values = struct2cell(varvalues);
+                values(cellfun(@islogical, values)) = cellfun(@double,values(cellfun(@islogical,values)), UniformOutput=false);     % turn logical to double
+                allargin = [names values]';
+                allargin = allargin(:);
+                eeg.eventSend(allargin(:));
+            end
+        end
         function eventReset(eeg)
             eeg.eventCount = 0;
           	eeg.eventTime = zeros(10^4,1);
