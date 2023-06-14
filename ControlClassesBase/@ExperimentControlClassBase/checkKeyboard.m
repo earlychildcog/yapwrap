@@ -26,19 +26,19 @@ if keyIsDown
     elseif any(keys ==  key.q)
         flagResult   = -9;
         xp.eyelink.write('Pressed q key - quit experiment @%.3fsec',keyOnset)
-        xp.eeg.eventSave('kqui', keyOnset)
+        xp.eeg.eventSaveMultiIntoOne('kqui', keyOnset)
 
     % calibrate
     elseif any(keys ==  key.c)
         flagResult   = -1;        
         xp.eyelink.write('Pressed c key - recalibrate @%.3fsec',keyOnset)
-        xp.eeg.eventSave('kcal', keyOnset)
+        xp.eeg.eventSaveMultiIntoOne('kcal', keyOnset)
 
     % gogogo to trial
     elseif any(keys ==  key.space) && attget
         flagResult   = 1;         
         xp.eyelink.write('Pressed space key - go to trial @%.3fsec',keyOnset)
-        xp.eeg.eventSave('kspc', keyOnset)
+        xp.eeg.eventSaveMultiIntoOne('kspc', keyOnset)
 
     % plays attention sound
     elseif any(keys ==  key.s)                      
@@ -46,7 +46,7 @@ if keyIsDown
             xp.sound.which = xp.sound.data{1,randi(6)};
             timeLastSound  = xp.sound.play;
             xp.eyelink.write('Pressed s key - play sound random attention sound @%.3fsec',keyOnset)
-            xp.eeg.eventSave('ksou', timeLastSound)
+            xp.eeg.eventSaveMultiIntoOne('ksou', timeLastSound)
         end
 
     % play break video
@@ -54,7 +54,7 @@ if keyIsDown
         idBreakvideo = find(any(keys ==  KbName({'1!' '2@' '3#' '4$' '5%'})', 2),1);
         flagResult   = -20 - idBreakvideo;
         xp.eyelink.write('Pressed %d key - play pause video @%.3fsec',idBreakvideo, idBreakvideo, keyOnset)
-        xp.eeg.eventSave('kpau', keyOnset)
+        xp.eeg.eventSaveMultiIntoOne('kpau', keyOnset)
     end
 end
 end

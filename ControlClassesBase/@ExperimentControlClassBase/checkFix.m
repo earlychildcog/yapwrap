@@ -1,4 +1,4 @@
-function [roiFixated, timeFixated] = checkFix(xp, whichrect, padding, keyboardDummy, verbose)
+function [roiFixated, timeFixated, keyFlip] = checkFix(xp, whichrect, padding, keyboardDummy, verbose)
 % function that checks if there is fixation in any of the rectangles
 % we have defined, indicated in $whichrect. If yes, returns which rectangle
 % in the above order. If keyboardDummy is true, A and D can be used for
@@ -21,6 +21,7 @@ if nargin < 5
         end
     end
 end
+keyFlip = false;
 nROI = length(whichrect);
 % TO DELETE FOR TESTING
 % xp.screen.width  = 1280;
@@ -56,7 +57,8 @@ if verbose
     Screen('FillRect',xp.screen.win, 1, rectPadded(:,whichrect~=1));
 end
 roiFixated  = 0;
-timeFixated = NaN;
+% timeFixated = NaN;
+timeFixated = GetSecs;
 
 % which eye to use
 
@@ -93,87 +95,39 @@ if xp.eyelink.status == 1
     end
 end
 
+% manual controlled through keyboard
 if keyboardDummy
     [keyIsDown, timeFixated_ ,keyCode] = PsychHID('KbCheck', xp.keyboard.index);      %reads key pressed
-    if isnan(timeFixated)
-        timeFixated = timeFixated_;
-    end
+    % if isnan(timeFixated)         % not sure why this is here, should remove if all works
+    %     timeFixated = timeFixated_;
+    % end
     if keyIsDown
-        switch find(keyCode,1)
-
-            % This is for Fam Match and Test trials (3 AOIs)
-            case KbName('leftarrow')
-                roiFixated = 1;
-                xp.eyelink.write('Pressed left key',timeFixated_)
-                xp.eeg.eventSaveMultiIntoOne('klef', timeFixated_)
-            case KbName('rightarrow')
-                if length(whichrect) > 1
-                    roiFixated = 2;
-                    xp.eyelink.write('Pressed right key',timeFixated_)
-                    xp.eeg.eventSaveMultiIntoOne('krig', timeFixated_)
-                end
-            case KbName('uparrow')
-                if length(whichrect) > 2
-                    roiFixated = 3;
-                    xp.eyelink.write('Pressed up key',timeFixated_)
-                    xp.eeg.eventSaveMultiIntoOne('keup', timeFixated_)
-                end
-
-                % This is for Fam Flip trials (9 AOIs)
-            case KbName('1!')
-                if length(whichrect) > 4 && find(keyCode,1,'last') == KbName('LeftShift')
-                    roiFixated = 1;
-                    xp.eyelink.write('Pressed key 1',timeFixated_)
-                    xp.eeg.eventSaveMultiIntoOne('key1', timeFixated_)
-                end
-            case KbName('2@')
-                if length(whichrect) > 4 && find(keyCode,1,'last') == KbName('LeftShift')
-                    roiFixated = 2;
-                    xp.eyelink.write('Pressed key 2',timeFixated_)
-                    xp.eeg.eventSaveMultiIntoOne('key2', timeFixated_)
-                end
-            case KbName('3#')
-                if length(whichrect) > 4 && find(keyCode,1,'last') == KbName('LeftShift')
-                    roiFixated = 3;
-                    xp.eyelink.write('Pressed key 3',timeFixated_)
-                    xp.eeg.eventSaveMultiIntoOne('key3', timeFixated_)
-                end
-            case KbName('4$')
-                if length(whichrect) > 4 && find(keyCode,1,'last') == KbName('LeftShift')
-                    roiFixated = 4;
-                    xp.eyelink.write('Pressed key 4',timeFixated_)
-                    xp.eeg.eventSaveMultiIntoOne('key4', timeFixated_)
-                end
-            case KbName('5%')
-                if length(whichrect) > 4 && find(keyCode,1,'last') == KbName('LeftShift')
-                    roiFixated = 5;
-                    xp.eyelink.write('Pressed key 5',timeFixated_)
-                    xp.eeg.eventSaveMultiIntoOne('key5', timeFixated_)
-                end
-            case KbName('6^') && find(keyCode,1,'last') == KbName('LeftShift')
-                if length(whichrect) > 4
-                    roiFixated = 6;
-                    xp.eyelink.write('Pressed key 6',timeFixated_)
-                    xp.eeg.eventSaveMultiIntoOne('key6', timeFixated_)
-                end
-            case KbName('7&') && find(keyCode,1,'last') == KbName('LeftShift')
-                if length(whichrect) > 4
-                    roiFixated = 7;
-                    xp.eyelink.write('Pressed key 7',timeFixated_)
-                    xp.eeg.eventSaveMultiIntoOne('key7', timeFixated_)
-                end
-            case KbName('8*') && find(keyCode,1,'last') == KbName('LeftShift')
-                if length(whichrect) > 4
-                    roiFixated = 8;
-                    xp.eyelink.write('Pressed key 8',timeFixated_)
-                    xp.eeg.eventSaveMultiIntoOne('key8', timeFixated_)
-                end
-            case KbName('9(') && find(keyCode,1,'last') == KbName('LeftShift')
-                if length(whichrect) > 4
-                    roiFixated = 9;
-                    xp.eyelink.write('Pressed key 9',timeFixated_)
-                    xp.eeg.eventSaveMultiIntoOne('key9', timeFixated_)
-                end
+        if keyCode(KbName('LeftShift'))
+            roiAll = {'1!' '2@' '3#' '4$' '5%' '6^' '7&' '8*' '9('};
+            if length(whichrect) < length(roiAll)
+                roiAll = roiAll(1:length(whichrect));
+            end
+            keyroi = find(keyCode(KbName(roiAll)), 1);
+            if ~isempty(keyroi)
+                roiFixated = keyroi;
+                xp.eyelink.write(sprintf('Pressed key %d', keyroi),timeFixated_)
+                xp.eeg.eventSaveMultiIntoOne(sprintf('key%d', keyroi), timeFixated_)
+                keyFlip = true;
+                timeFixated = timeFixated_;
+            end
+        else
+            roiAll = {'leftarrow' 'rightarrow' 'uparrow'};
+            if length(whichrect) < length(roiAll)
+                roiAll = roiAll(1:length(whichrect));
+            end
+            keyroi = find(keyCode(KbName(roiAll)), 1);
+            if ~isempty(keyroi)
+                roiFixated = keyroi;
+                xp.eyelink.write(sprintf('Pressed key %s', roiAll{keyroi}),timeFixated_)
+                xp.eeg.eventSaveMultiIntoOne(sprintf('key%s', roiAll{keyroi}), timeFixated_)
+                keyFlip = true;
+                timeFixated = timeFixated_;
+            end
         end
     end
     if verbose
