@@ -1,9 +1,17 @@
-function [flagResult, time] = attgetPart(xp)
+function [flagResult, time] = attgetPart(xp, flagAnimate)
+arguments
+    xp
+    flagAnimate logical = false % control if we show an animated or static pre-trial fixation grabber
+end
 flagResult = -10;
 xp.eyelink.startrec;
 while flagResult < 0
-    % [flagResult, time] = playPretrial(xp);
-    [flagResult, time] = playPretrialVideo(xp);
+    % choose between an animated or static pre-trial fixation grabber
+    if flagAnimate
+        [flagResult, time] = playPretrialVideo(xp);
+    else
+        [flagResult, time] = playPretrial(xp);
+    end
     if flagResult == -1     % recalibrate
         xp.trial.varValue.result = flagResult;
         xp.eyelink.stoprec;
