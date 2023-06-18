@@ -21,7 +21,7 @@ classdef TrialControlClassBase < handle
         varNames                            = {};           % to store the variables to send
         varValue                            = struct;
         result                              = '';
-        sideRevealed                        = string([]);
+        sideRevealed                        = [];       % 1 for left, 2 for right
         flagResult                          = logical([]);
 
         
