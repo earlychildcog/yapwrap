@@ -63,8 +63,8 @@ classdef ExperimentControlClassBase < handle
             sessionId = '';
             listSessions = {'a' 'b' 'c' 'p'};
             while subjno == 0
-                while isempty(subjno) || subjno <= 0 || subjno > 999
-                    subjno = round(input('\ngive subject number (1-999):'));
+                while isempty(subjno) || subjno <= 0 || subjno > 499
+                    subjno = round(input('\ngive subject number (1-499):'));
                 end
                 while isempty(sessionId) || ~ismember(sessionId, listSessions)
                     sessionId = input(['\ngive sessionid (' [listSessions{:}] '):'],'s');

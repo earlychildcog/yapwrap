@@ -54,15 +54,16 @@ classdef LogControlClassBase < handle
             if log.status
                 result = true;
                 if nargin == 1
-                    line = [log.subject, struct2cell(log.trial.varValue)'];
+                    values = struct2cell(log.trial.varValue)';
+                    values(cellfun(@islogical,values)) = cellfun(@double,values(cellfun(@islogical,values)), UniformOutput=false); % convert logical values to numerical
+                    line = [log.subject, values];       % converts all to string by default
+                    line(arrayfun(@ismissing,line)) = "NA";
                 end
                 if length(line) ~= length(log.header)
                     warning('Writing to log file failed: line length does not match header')
                     result = false;
                     return
                 end
-                line(cellfun(@islogical,line)) = cellfun(@double,line(cellfun(@islogical,line)), UniformOutput=false); % convert logical values to numerical
-                line = cellfun(@string,line);        % convert `line` contents to strings
                 try
                     fprintf(log.fid, '\n');
                     arrayfun(@(x)fprintf(log.fid, '%s\t',x),line);
