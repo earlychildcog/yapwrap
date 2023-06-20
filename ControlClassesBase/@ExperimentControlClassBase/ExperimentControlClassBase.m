@@ -96,7 +96,7 @@ classdef ExperimentControlClassBase < handle
             PsychDefaultSetup(2);                               % initiate psychtoolbox with default settings
             
             xp.keyboard.init;                                   % initialise keyboard
-
+            rng('shuffle');     % shuffle the random generator for a random seed
             % adds a log folder in case there is not one;
             if exist('logs','file') ~= 7
                 mkdir('logs')

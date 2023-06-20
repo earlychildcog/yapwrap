@@ -41,7 +41,7 @@ while flagLoop
         xp.sound.play;
         timeTriggerSound = GetSecs; %reinitialise
     end
-    [flagTrigger, timeTrigger] = xp.checkFix(9, 1/15);           % do we need padding? change 0 to sth
+    [flagTrigger, timeTrigger] = xp.checkFix(-1, 1/15);           % do we need padding? change 0 to sth
 %     fprintf('roi %d at %.3f\n', flagTrigger, timeTrigger - timeTrigger0);
     %%% keyboard check
 
