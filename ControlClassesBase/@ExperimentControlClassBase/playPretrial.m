@@ -19,7 +19,7 @@ flagResult = 0;
 timeTrigger0 = GetSecs;
 timeTrigger1 = timeTrigger0;
 timeTriggerSound = timeTrigger0;
-durMaxIn  = 1;
+durMaxIn  = 0.5;
 durMinOut = 0.05;
 xp.eyelink.write('attget start @%.3fsec', timeStim)
 while flagLoop

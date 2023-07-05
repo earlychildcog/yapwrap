@@ -97,7 +97,7 @@ classdef EegControlClassBase < handle
                 values(cellfun(@islogical, values)) = cellfun(@double,values(cellfun(@islogical,values)), UniformOutput=false);     % turn logical to double
                 allargin = [names values]';
                 allargin = allargin(:);
-                eeg.eventSend(allargin(:));
+                eeg.eventSend(allargin{:});
             end
         end
         function eventReset(eeg)
