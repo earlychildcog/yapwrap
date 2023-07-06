@@ -9,8 +9,10 @@ function [roiFixated, timeFixated, keyFlip] = checkFix(xp, whichrect, padding, k
 % required, we need to adjust.
 % Also, we need to time the "EyeAvailable" thing, in case it take too much
 % time we should remove and adjust.
+% NOTE: THE SCREEN ROI SHOULD BE LAST (IF INCLUDED)
 
 persistent timeOutOfScreenStart
+persistent roiOld
 whichrect(whichrect <= 0) = size(xp.screen.rect,2) + whichrect(whichrect <= 0);
 if nargin < 5
     verbose = false;
@@ -56,7 +58,6 @@ if verbose
     Screen('FillRect',xp.screen.win, 0, [0; 0; 1280; 1024]);
     Screen('FillRect',xp.screen.win, 1, rectPadded(:,whichrect~=1));
 end
-roiFixated  = 0;
 % timeFixated = NaN;
 timeFixated = GetSecs;
 
@@ -68,29 +69,58 @@ if xp.eyelink.status == 1
 
     eye_used = Eyelink('EyeAvailable');
     if eye_used == 2
-        eye_used = 1;
+        eye_used = [0 1];
+        x = [NaN NaN];
+        y = [NaN NaN];
+        roiFixated = [0 0];
+    else
+        roiFixated  = 0;
     end
     % get the sample in the form of an event structure
     evt = Eyelink('NewestFloatSample');
-    if eye_used ~= -1 % do we know which eye to use yet?
-        % if we do, get current gaze position from sample
-        x = evt.gx(eye_used+1); % +1 as we're accessing MATLAB array
-        y = evt.gy(eye_used+1);
-        timeFixated = GetSecs;
-        if verbose
-            fprintf('%f %f %.4f\n',x, y, GetSecs);
-        end
-        % do we have valid data and is the pupil visible?
-        if x~=xp.eyelink.settings.MISSING_DATA && y~=xp.eyelink.settings.MISSING_DATA && evt.pa(eye_used+1)>0
-            % check if we hit any ROI
-            for iROI = 1:nROI
-                if (y > rectPadded(2,iROI)) && (y < rectPadded(4,iROI))
-                    if (x < rectPadded(3,iROI)) && (x > rectPadded(1,iROI))
-                        roiFixated = iROI;
-                        break
+    if eye_used(1) ~= -1 % do we know which eye to use yet?
+        for iEye = 1:length(eye_used)
+            % if we do, get current gaze position from sample
+            x(iEye) = evt.gx(eye_used(iEye)+1); % +1 as we're accessing MATLAB array
+            y(iEye) = evt.gy(eye_used(iEye)+1);
+            timeFixated = GetSecs;      % Note: maybe better way? should not matter much though
+            if verbose
+                fprintf('eye %d:%f %f %.4f\n',eye_used(iEye), x(iEye), y(iEye), GetSecs);
+            end
+            % do we have valid data and is the pupil visible?
+            if x(iEye)~=xp.eyelink.settings.MISSING_DATA && y(iEye)~=xp.eyelink.settings.MISSING_DATA && evt.pa(eye_used(iEye)+1)>0
+                % check if we hit any ROI
+                for iROI = 1:nROI
+                    if (y(iEye) > rectPadded(2,iROI)) && (y(iEye) < rectPadded(4,iROI))
+                        if (x(iEye) < rectPadded(3,iROI)) && (x(iEye) > rectPadded(1,iROI))
+                            roiFixated(iEye) = iROI;
+                            break
+                        end
                     end
                 end
             end
+        end
+    end
+end
+
+% if we track both eyes...
+if length(roiFixated) > 1
+    if roiFixated(1) == roiFixated(2)
+        roiFixated = roiFixated(1);
+    else    % rois disagree
+        if any(roiFixated == 0) % if one is out of any roi, we pick the other
+            roiFixated = roiFixated(roiFixated ~= 0);
+            % fprintf('gaze unstable: eye not detected, picking eye %d\n', find(roiFixated == 0));
+        elseif any(roiFixated == idScreenRect)  % if one is screen, we pick the other valid roi
+            roiFixated = roiFixated(roiFixated ~= idScreenRect);
+            % fprintf('gaze unstable: eye somewhere on screen, picking eye %d\n', find(roiFixated ~= idScreenRect));
+        elseif ~isempty(roiOld) && any(roiFixated == roiOld)    % if one is stable, we choose that and throw a warning
+            roiFixated = roiFixated(roiFixated == roiOld);
+            % fprintf('gaze unstable: different rois, picking old eye %d\n', find(roiFixated == roiOld));
+        else        % wtf situation 2 rois chosen
+            iEye = randi(2);
+            roiFixated = roiFixated(iEye);
+            fprintf(2,'gaze unstable, picking at random eye %d (%d roi)\n', iEye, roiFixated)
         end
     end
 end
@@ -148,3 +178,8 @@ else
     end
 end
 
+if roiFixated ~= 0
+    roiOld = roiFixated;
+else
+    roiOld = [];
+end
