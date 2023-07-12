@@ -62,7 +62,6 @@ end
 timeFixated = GetSecs;
 
 % which eye to use
-
 if xp.eyelink.status == 1
     while Eyelink('NewFloatSampleAvailable') == 0 % waiting for sample...
     end
@@ -101,6 +100,8 @@ if xp.eyelink.status == 1
             end
         end
     end
+else
+    roiFixated  = 0;
 end
 
 % if we track both eyes...
