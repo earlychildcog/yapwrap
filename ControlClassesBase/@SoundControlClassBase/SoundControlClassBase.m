@@ -62,16 +62,19 @@ classdef SoundControlClassBase < handle
             end
         end
 
-        function time = play(sound, when, wait)
+        function time = play(sound, when, wait, loop)
             if nargin < 2
                 when = 0;
             end
             if nargin < 3
                 wait = 1;
             end
+            if nargin < 4
+                loop = [];
+            end
             PsychPortAudio('Volume', sound.pahandle, sound.volume);
             PsychPortAudio('FillBuffer', sound.pahandle, sound.which);
-            time = PsychPortAudio('Start', sound.pahandle,[],when, wait);
+            time = PsychPortAudio('Start', sound.pahandle,loop,when, wait);
         end
         function stop(sound)
             PsychPortAudio('Stop', sound.pahandle);
