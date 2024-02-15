@@ -162,8 +162,17 @@ classdef EyelinkControlClassBase < handle
                     fprintf('ReceiveFile status %d\n', statusEdf);
                 end
                 if 2==exist(eyelink.edfname, 'file')
-                    movefile(eyelink.edfname,[eyelink.edffolder '/' eyelink.edfname])
-                    fprintf('Data file ''%s'' can be found in ''%s''\n', eyelink.edfname, [pwd '/' eyelink.edffolder] );
+                    target = [eyelink.edffolder '/' eyelink.edfname];
+                    % check if there is file at destination
+                    if exist(target, 'file')
+                        target = strrep(target,'.edf','_01.edf');
+                        while exist(target, 'file')
+                            target = regexprep(target,'_(\d\d)(\.edf$)','_${sprintf(''%.2d'',str2num($1)+1)}$2');
+                        end
+                        fprintf('Edf file renamed as %s\n', target)
+                    end
+                    movefile(eyelink.edfname,target)
+                    fprintf('Data file ''%s'' can be found in ''%s''\n', eyelink.edfname, dir(target).folder );
                 end
             catch rdf
                 warning('Problem receiving data file ''%s''\n', eyelink.edfname );
