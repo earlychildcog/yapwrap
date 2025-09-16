@@ -2,8 +2,10 @@ classdef ScreenControlClassBase < handle
     % some description to come
     properties
         status          logical = false
+        nr              = 0;        % screens to open
+        mirror          = [];        % set which of the above to mirror primary monitor (1) to; empty if none
+        monitor         MonitorControlClassBase = MonitorControlClassBase
         win
-        nr              = 0;
         backcolour      = [125 125 125]/255;
         colour
         width
@@ -17,6 +19,15 @@ classdef ScreenControlClassBase < handle
     methods
 
         function screen = ScreenControlClassBase(status)
+            % set which screen; can be changed before calling screen.init
+            if IsLinux 
+                screen.nr  = max(Screen('Screens'));
+            elseif IsWin
+                screen.nr  = [1 3];
+                screen.mirror = 2;
+            else
+                screen.nr  = min(Screen('Screens'));
+            end
             if nargin > 0 && status
                 screen.init;
             end
@@ -25,15 +36,16 @@ classdef ScreenControlClassBase < handle
         function delete(screen)
         end
 
-        function getProperties(screen)
+        function setup(screen)
             % Define black, white and grey (or/and other colours)
-            screen.nr
-            screen.colour.black          	= BlackIndex(screen.nr);
-            screen.colour.white             = WhiteIndex(screen.nr);
+            
+
+            screen.colour.black          	= BlackIndex(screen.nr(1));
+            screen.colour.white             = WhiteIndex(screen.nr(1));
             screen.colour.grey          	= (screen.colour.black+screen.colour.white)/2;
 
             %READ the presentation screen size           
-            ScreenRes           = Screen('Resolution', screen.nr);
+            ScreenRes           = Screen('Resolution', screen.nr(1));
             screen.width   	    = ScreenRes(1).width;
             screen.height   	= ScreenRes(1).height;
             screen.full = [0; 0; screen.width; screen.height];
@@ -41,32 +53,12 @@ classdef ScreenControlClassBase < handle
 
         function init(screen)
             screen.status = true;
-            screen.getProperties;
-%             screen.nr = max(Screen('Screens'));
+            screen.setup;   % setup basic properties of screen
             Screen('Preference','SkipSyncTests',2*screen.skipsynccheck);
-            % open screen window
-            att_count = 0;
-            err_count = 0;
-            max_errors = 5;
-            while att_count == err_count && err_count <= max_errors
-                try
-                    screen.win = PsychImaging('OpenWindow', screen.nr, screen.backcolour,[],32, 2, 0);
-                catch
-                    warning('screen sync failed');
-                    err_count = err_count+1;
-                end
-                att_count = att_count + 1;
-            end
-            if err_count <= max_errors
-                disp('window sync successful');
-            else
-                disp('syncronisation failed; disabling sync tests');
-                Screen('Preference','SkipSyncTests', 1);
-                screen.win = PsychImaging('OpenWindow', screen.nr, screen.backcolour,[],32, 2, 0);
-            end
-            
-
-            screen.refrate      = Screen('GetFlipInterval',screen.win);     %get half the refresh interval of the screen
+            ov = Screen('Preference', 'ConserveVRAM');
+            %% start monitor(s)
+            screen.monitor = arrayfun(@(nr)MonitorControlClassBase(nr), screen.nr);
+            screen.win = screen.monitor(1).win;
         end
 
         function fill(screen,colour)

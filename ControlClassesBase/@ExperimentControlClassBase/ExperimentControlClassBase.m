@@ -29,7 +29,7 @@ classdef ExperimentControlClassBase < handle
         trial               TrialControlClassBase       = TrialControlClassBase   % trial settings
 
         eyelink             EyelinkControlClassBase     = EyelinkControlClassBase % eyelink settings
-        
+        pupillo             PupilloControlClassBase
         eeg                 EegControlClassBase         = EegControlClassBase      % EEG settings
         log                 LogControlClassBase         = LogControlClass
     end
@@ -98,10 +98,10 @@ classdef ExperimentControlClassBase < handle
             xp.keyboard.init;                                   % initialise keyboard
             rng('shuffle');     % shuffle the random generator for a random seed
             % adds a log folder in case there is not one;
-            if exist('logs','file') ~= 7
+            if ~isfolder('logs')
                 mkdir('logs')
             end
-            if exist('logs/debug','file') ~= 7
+            if ~isfolder('logs/debug')
                 mkdir('logs/debug')
             end
             diary(sprintf('logs/debug/%s_%.3d.log',xp.name,xp.subject));     % a basic log of command line trash
@@ -193,14 +193,51 @@ classdef ExperimentControlClassBase < handle
         end
 
         % displays texture in buffer
-        function time = flip(xp,time,dontclear)
+        function time = flip(xp,time,dontclear, roi, colour, text)
+            % tic
             if nargin < 2 || isempty(time)
                 time = 0;
             end
             if nargin < 3 || isempty(dontclear)
                 dontclear = 0;
             end
+            if nargin < 4
+                roi = [];
+                colour = [];
+            end
+            if nargin < 6
+                text = '';
+            end
+            if ~isempty(xp.screen.mirror)
+                Screen('CopyWindow',xp.screen.monitor(1).win,xp.screen.monitor(1).offwin, xp.screen.monitor(1).rect, xp.screen.monitor(1).offrect)                                   % win1 -> offwin1
+                Screen('CopyWindow',xp.screen.monitor(1).offwin,xp.screen.monitor(2).offwin, xp.screen.monitor(1).offrect, xp.screen.monitor(2).offrect)                 % offwin1 -> offwin2
+                % if pupillo is used, plot gaze
+                if xp.pupillo.status && ~isempty(xp.pupillo.client) && xp.pupillo.client.UserData(1) == 1
+                    xp.pupillo.client.UserData(1) = 0;
+                    x = xp.pupillo.client.UserData(3)*xp.screen.monitor(2).rect(3);
+                    y = xp.pupillo.client.UserData(4)*xp.screen.monitor(2).rect(4);
+                    Screen('glPoint', xp.screen.monitor(2).offwin, [0 255 0], x, y, 25);
+                end
+                % draw roi(s)
+                if xp.pupillo.status
+                    roi = [roi xp.pupillo.roiCalib];
+                    colour = [colour; xp.pupillo.roiColour];
+                    xp.pupillo.roiCalib = [];
+                    xp.pupillo.roiColour = [];
+                end
+                if ~isempty(roi)
+                    Screen('FrameRect', xp.screen.monitor(2).offwin, colour, roi);
+                end
+                if ~isempty(text)
+                    Screen('DrawText', xp.screen.monitor(2).offwin, text, 100, 100);
+                end
+                Screen('CopyWindow',xp.screen.monitor(2).offwin,xp.screen.monitor(2).win, xp.screen.monitor(2).offrect, xp.screen.monitor(2).rect)     % offwin2 -> win2
+            end
+            % toc
             time = Screen('Flip',xp.screen.win, time, dontclear);
+            if xp.screen.mirror > 0
+                Screen('Flip',xp.screen.monitor(xp.screen.mirror).win, time, dontclear);
+            end
         end
         
         
@@ -254,19 +291,6 @@ classdef ExperimentControlClassBase < handle
             end
             state = false;
         end
-
-%         function suspend(xp)
-%             if false
-%                 NetStation('StopRecording')
-%             end
-%             xp.erase;
-%         end
-%         
-%         function resume(xp)
-%             if false
-%                 NetStation('StartRecording');
-%             end
-%         end
 
         function state = waitSpace(xp)
             

@@ -63,20 +63,10 @@ timeFixated = GetSecs;
 
 % which eye to use
 if xp.eyelink.status == 1
-    while Eyelink('NewFloatSampleAvailable') == 0 % waiting for sample...
-    end
 
-    eye_used = Eyelink('EyeAvailable');
-    if eye_used == 2
-        eye_used = [0 1];
-        x = [NaN NaN];
-        y = [NaN NaN];
-        roiFixated = [0 0];
-    else
-        roiFixated  = 0;
-    end
-    % get the sample in the form of an event structure
-    evt = Eyelink('NewestFloatSample');
+    x = nan(size(eye_used));
+    y = nan(size(eye_used));
+    roiFixated = zeros(size(eye_used));
     if eye_used(1) ~= -1 % do we know which eye to use yet?
         for iEye = 1:length(eye_used)
             % if we do, get current gaze position from sample

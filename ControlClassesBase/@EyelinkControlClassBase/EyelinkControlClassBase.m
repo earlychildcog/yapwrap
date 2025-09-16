@@ -15,6 +15,7 @@ classdef EyelinkControlClassBase < handle
         edf
         ip              = '10.10.10.70';
         eyeused         = [];
+        last_sample     = struct(eye_used=[], x=[], y=[])
     end
     
     methods
@@ -138,6 +139,18 @@ classdef EyelinkControlClassBase < handle
                 % Calibrate the eye tracker
                 EyelinkDoTrackerSetup(eyelink.settings);
             end
+        end
+        function gaze = getgaze(eyelink)
+            while Eyelink('NewFloatSampleAvailable') == 0 % waiting for sample...
+            end
+            eye_used = Eyelink('EyeAvailable');
+            if eye_used == 2
+                eye_used = [0 1];
+            end
+            % get the sample in the form of an event structure
+            evt = Eyelink('NewestFloatSample');
+            gaze = struct(eye_used=eye_used, x=evt.gx, y=evt.gy);
+            eyelink.last_sample = gaze;
         end
 
         function write(eyelink, message, varargin)
