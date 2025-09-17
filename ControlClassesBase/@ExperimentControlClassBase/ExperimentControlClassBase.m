@@ -19,27 +19,24 @@ classdef ExperimentControlClassBase < handle
         settings        = struct;
 
         config          = 'default_config'
-        
+
 %         log                 {mustBeA(log,'LogControlClass')}        % log settings
         screen              ScreenControlClassBase      = ScreenControlClassBase  % screen settings
         sound               SoundControlClassBase       = SoundControlClassBase   % sound settings
         keyboard            KeyControlClassBase         = KeyControlClassBase     % keyboard settings
         image               ImageControlClassBase       = ImageControlClassBase   % image settings
-
         trial               TrialControlClassBase       = TrialControlClassBase   % trial settings
-
-        eyelink             EyelinkControlClassBase     = EyelinkControlClassBase % eyelink settings
-        pupillo             PupilloControlClassBase
+        eyetracker          EyetrackerControlClassBase   % eyelink or pupillo?
         eeg                 EegControlClassBase         = EegControlClassBase      % EEG settings
         log                 LogControlClassBase         = LogControlClass
     end
-    
+
     methods
         function xp = ExperimentControlClassBaseBase(status)
-            
+
             xp.image    = ImageControlClassBase;
             xp.screen   = ScreenControlClassBase;
-            xp.eyelink  = EyelinkControlClassBase;
+            xp.eyetracker = PupilloControlClassBase;
             xp.eeg      = EegControlClassBase;
             xp.sound    = SoundControlClassBase;
             xp.keyboard = KeyControlClassBase;
@@ -84,46 +81,47 @@ classdef ExperimentControlClassBase < handle
             end
 
             % careful: edf filename must be up to 8 letters (without the extension)
-            xp.eyelink.edfname = edfname;
+            xp.eyetracker.savefile = edfname;
         end
         function init(xp)
             %get information for this session
-            
+
             xp.keyboard.init;
 
             xp.image.screen = xp.screen;                        % link image control class to screen
-            
+
             PsychDefaultSetup(2);                               % initiate psychtoolbox with default settings
-            
+
             xp.keyboard.init;                                   % initialise keyboard
             rng('shuffle');     % shuffle the random generator for a random seed
             % adds a log folder in case there is not one;
-            if ~isfolder('logs')
-                mkdir('logs')
-            end
             if ~isfolder('logs/debug')
                 mkdir('logs/debug')
+            elseif ~isfolder('logs')
+                mkdir('logs')
             end
             diary(sprintf('logs/debug/%s_%.3d.log',xp.name,xp.subject));     % a basic log of command line trash
-            
-            
+
+
             if ~xp.debug            % unless we operate in debug mode, we disable mouse cursor and keyboard input
                 ListenChar(2);      % Disable keyboard input messing up in the command window/script
                 HideCursor();       % Hiding mouse cursor
             end
-            
+
             xp.screen.init;         % initialise screen --- we have preset configuration already
             Screen('BlendFunction', xp.screen.win, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');   % enable transparency
-            
+
             xp.sound.init;          % initialise sound
 
             fprintf('\n****************************************\nExperiment %s\n',xp.name);
             fprintf('%s\n',datestr(now));
             fprintf('Subject %s\n\n',xp.subject);
-            
-            xp.eyelink.screen = xp.screen;
-            xp.eyelink.trial = xp.trial;
-            xp.eyelink.calib_pahandle = xp.sound.pahandle;
+
+            xp.eyetracker.screen = xp.screen;
+            xp.eyetracker.trial = xp.trial;
+            if isa(xp.eyetracker, 'EyelinkControlClassBase')
+                xp.eyetracker.calib_pahandle = xp.sound.pahandle;
+            end
             xp.log.trial = xp.trial;
         end
 
@@ -134,25 +132,25 @@ classdef ExperimentControlClassBase < handle
             xp.sound.delete();
             xp.trial.delete();
             xp.screen.delete();
-            xp.eyelink.delete();
+            xp.eyetracker.delete();
             xp.log.delete();
             xp.delete()
 %             clear ExperimentControlClass
         end
-        
+
         % function to load configuration settings file
         function loadconfig(xp)
             eval([xp.config '(xp)']);                   % HORRIBLE need to change that later
         end
-        
+
         %% screen control functions
-        
+
         % erases screen
         function time = erase(xp)
             xp.fill;
             time = xp.flip;
         end
-        
+
         % buffers with a $colour rectangle for later use
         function fill(xp,colour)
             if ~exist('colour','var')
@@ -212,18 +210,18 @@ classdef ExperimentControlClassBase < handle
                 Screen('CopyWindow',xp.screen.monitor(1).win,xp.screen.monitor(1).offwin, xp.screen.monitor(1).rect, xp.screen.monitor(1).offrect)                                   % win1 -> offwin1
                 Screen('CopyWindow',xp.screen.monitor(1).offwin,xp.screen.monitor(2).offwin, xp.screen.monitor(1).offrect, xp.screen.monitor(2).offrect)                 % offwin1 -> offwin2
                 % if pupillo is used, plot gaze
-                if xp.pupillo.status && ~isempty(xp.pupillo.client) && xp.pupillo.client.UserData(1) == 1
-                    xp.pupillo.client.UserData(1) = 0;
-                    x = xp.pupillo.client.UserData(3)*xp.screen.monitor(2).rect(3);
-                    y = xp.pupillo.client.UserData(4)*xp.screen.monitor(2).rect(4);
+                if xp.eyetracker.status && ~isempty(xp.eyetracker.last_sample)
+                    gaze = xp.eyetracker.last_sample;
+                    x = xp.eyetracker.last_sample.x(1);
+                    y = xp.eyetracker.last_sample.y(1);
                     Screen('glPoint', xp.screen.monitor(2).offwin, [0 255 0], x, y, 25);
                 end
                 % draw roi(s)
-                if xp.pupillo.status
-                    roi = [roi xp.pupillo.roiCalib];
-                    colour = [colour; xp.pupillo.roiColour];
-                    xp.pupillo.roiCalib = [];
-                    xp.pupillo.roiColour = [];
+                if xp.eyetracker.status && isa(xp.eyetracker, 'PupilloControlClassBase')
+                    roi = [roi xp.eyetracker.roiCalib];
+                    colour = [colour; xp.eyetracker.roiColour];
+                    xp.eyetracker.roiCalib = [];
+                    xp.eyetracker.roiColour = [];
                 end
                 if ~isempty(roi)
                     Screen('FrameRect', xp.screen.monitor(2).offwin, colour, roi);
@@ -239,8 +237,8 @@ classdef ExperimentControlClassBase < handle
                 Screen('Flip',xp.screen.monitor(xp.screen.mirror).win, time, dontclear);
             end
         end
-        
-        
+
+
         %% experiment control functions
         function state = pause(xp)
             xp.suspend;
@@ -255,13 +253,13 @@ classdef ExperimentControlClassBase < handle
                 return
             end
         end
-        
-        
+
+
         function state = checkPause(xp)
             pauseKey = KbName('p');
             breakKey = KbName('b');
             quitKey = KbName('q');
-            
+
             if xp.isKey(pauseKey)
                 state = xp.pause;
                 return
@@ -277,14 +275,14 @@ classdef ExperimentControlClassBase < handle
 
             state = 0;
         end
-        
+
         function state = checkKey(xp)
             keys = xp.keyboard.keyNums;
             if xp.isKey(pauseKey)
                 state = xp.pause;
                 return
             end
-            [keyIsDown,~,keyCode] = KbCheck();      %reads key pressed 
+            [keyIsDown,~,keyCode] = KbCheck();      %reads key pressed
             if keyIsDown && ismember(find(keyCode,1),keylist)
                 key = find(keyCode,1);
                 return
@@ -293,7 +291,7 @@ classdef ExperimentControlClassBase < handle
         end
 
         function state = waitSpace(xp)
-            
+
             QKEY = KbName('q');
             SPACEKEY = KbName('space');
             while 1
@@ -309,7 +307,7 @@ classdef ExperimentControlClassBase < handle
                 end
             end
         end
-        
+
         function state = isKey(xp,key)
             [ ~ , ~ , keyCode ] = KbCheck();
             if ~isnumeric(key)
@@ -319,33 +317,33 @@ classdef ExperimentControlClassBase < handle
             end
             state = keyCode(kc);
         end
-        
+
         function key = waitForKeys(xp,keylist)
             while 1
-                [keyIsDown,~,keyCode] = KbCheck();      %reads key pressed 
+                [keyIsDown,~,keyCode] = KbCheck();      %reads key pressed
                 if keyIsDown && ismember(find(keyCode,1),keylist)
                     key = find(keyCode,1);
                     return
                 end
             end
         end
-        
-        
+
+
         function state = waitToChoose(xp,keylist)
             key = xp.waitForKeys(keylist);
             state = find(key == keylist);
         end
-        
+
         function finish(xp)
-            
+
             ListenChar(0);          %reactivate keyboard
             ShowCursor();           %show cursor again
-        
-            
+
+
             if xp.eyelink.status
                 xp.eyelink.cleanup;
             end
-            
+
             WaitSecs(1);
             diary off;
             if xp.screen.win >=0
@@ -362,7 +360,7 @@ classdef ExperimentControlClassBase < handle
             clear xp.trial
             clear xp
         end
-        
+
 
     end
 end

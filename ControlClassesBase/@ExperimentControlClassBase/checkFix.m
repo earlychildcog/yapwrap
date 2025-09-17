@@ -62,22 +62,21 @@ end
 timeFixated = GetSecs;
 
 % which eye to use
-if xp.eyelink.status == 1
-
-    x = nan(size(eye_used));
-    y = nan(size(eye_used));
+if xp.eyetracker.status == 1
+    gaze = xp.eyetracker.getgaze;
+    x = gaze.x;
+    y = gaze.y;
+    eye_used = gaze.eye_used;
+    timeFixated = gaze.time;
     roiFixated = zeros(size(eye_used));
     if eye_used(1) ~= -1 % do we know which eye to use yet?
         for iEye = 1:length(eye_used)
             % if we do, get current gaze position from sample
-            x(iEye) = evt.gx(eye_used(iEye)+1); % +1 as we're accessing MATLAB array
-            y(iEye) = evt.gy(eye_used(iEye)+1);
-            timeFixated = GetSecs;      % Note: maybe better way? should not matter much though
             if verbose
                 fprintf('eye %d:%f %f %.4f\n',eye_used(iEye), x(iEye), y(iEye), GetSecs);
             end
             % do we have valid data and is the pupil visible?
-            if x(iEye)~=xp.eyelink.settings.MISSING_DATA && y(iEye)~=xp.eyelink.settings.MISSING_DATA && evt.pa(eye_used(iEye)+1)>0
+            if x(iEye)~=xp.eyetracker.settings.MISSING_DATA && y(iEye)~=xp.eyetracker.settings.MISSING_DATA && evt.pa(eye_used(iEye)+1)>0
                 % check if we hit any ROI
                 for iROI = 1:nROI
                     if (y(iEye) > rectPadded(2,iROI)) && (y(iEye) < rectPadded(4,iROI))
@@ -131,7 +130,7 @@ if keyboardDummy
             keyroi = find(keyCode(KbName(roiAll)), 1);
             if ~isempty(keyroi)
                 roiFixated = keyroi;
-                xp.eyelink.write(sprintf('Pressed key %d', keyroi),timeFixated_)
+                xp.eyetracker.write(sprintf('Pressed key %d', keyroi),timeFixated_)
                 xp.eeg.eventSaveMultiIntoOne(sprintf('key%d', keyroi), timeFixated_)
                 keyFlip = true;
                 timeFixated = timeFixated_;
@@ -144,7 +143,7 @@ if keyboardDummy
             keyroi = find(keyCode(KbName(roiAll)), 1);
             if ~isempty(keyroi)
                 roiFixated = keyroi;
-                xp.eyelink.write(sprintf('Pressed key %s', roiAll{keyroi}),timeFixated_)
+                xp.eyetracker.write(sprintf('Pressed key %s', roiAll{keyroi}),timeFixated_)
                 xp.eeg.eventSaveMultiIntoOne(sprintf('key%s', roiAll{keyroi}), timeFixated_)
                 keyFlip = true;
                 timeFixated = timeFixated_;

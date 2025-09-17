@@ -1,7 +1,7 @@
-classdef EyelinkControlClassBase < handle
+classdef EyelinkControlClassBase < EyetrackingControlClassBase
     %EYELINKCONTROLCLASS Summary of this class goes here
     %   Detailed explanation goes here
-    
+
     properties
         status          double = 0
         screen          ScreenControlClassBase = ScreenControlClassBase         % points to the screen
@@ -15,16 +15,17 @@ classdef EyelinkControlClassBase < handle
         edf
         ip              = '10.10.10.70';
         eyeused         = [];
-        last_sample     = struct(eye_used=[], x=[], y=[])
+        last_sample    struct
+        MISSING_DATA
     end
-    
+
     methods
         function eyelink = EyelinkControlClassBaseBase(status) %#ok<STOUT>
             if nargin > 0 && status
                 eyelink.init; %#ok<NODEF>
             end
         end
-        
+
         function init(eyelink)
 
             eyelink.status = 1;
@@ -39,7 +40,7 @@ classdef EyelinkControlClassBase < handle
             eyelink.settings.calib_pahandle = eyelink.calib_pahandle;
             % Configure animated calibration target path and properties
             eyelink.settings.calTargetType    = 'video';
-            
+            eyelink.MISSING_DATA = eyeling.settings.MISSING_DATA;
             % enter calibration video
             if isempty(eyelink.calib_video)
                 calvideo = dir('stimuli/videos/01-calibration/*.avi');
@@ -50,10 +51,10 @@ classdef EyelinkControlClassBase < handle
             eyelink.settings.targetbeep = 0;
             eyelink.settings.feedbackbeep = 0;
             eyelink.settings.calAnimationResetOnTargetMove = true; % false by default, set to true to rewind/replay video from start every time target moves
-            
+
             % You must call this function to apply the changes made to the eye.el structure above
             EyelinkUpdateDefaults(eyelink.settings);
-            
+
             Eyelink('SetAddress', eyelink.ip);    %Changing eyelink ip address
             % Initialization of the connection with the Eyelink Gazetracker.
             % exit program if this fails.
@@ -62,10 +63,10 @@ classdef EyelinkControlClassBase < handle
                 Eyelink('InitializeDummy','PsychEyelinkDispatchCallback');
                 eyelink.status = 2;
             end
-            
+
             [~, vs] = Eyelink('GetTrackerVersion');
             fprintf('Running experiment on a ''%s'' tracker.\n', vs );
-            
+
             % open file to record data to
             eyelink.edf = Eyelink('Openfile', eyelink.edfname, 1);
 
@@ -73,38 +74,38 @@ classdef EyelinkControlClassBase < handle
             if eyelink.edf ~= 0
                 error('Cannot create EDF file ''%s'' ', eyelink.edfname);
             end
-            
+
 
             % SET UP TRACKER CONFIGURATION
             % Setting the proper recording resolution, proper calibration type,
             % as well as the data file content;
             Eyelink('command', 'add_file_preamble_text ''Recorded by EyelinkToolbox conflict-study''');
-            
+
             % This command is crucial to map the gaze positions from the tracker to
             % screen pixel positions to determine fixation
             Eyelink('command','screen_pixel_coords = %ld %ld %ld %ld', 0, 0, eyelink.screen.width-1, eyelink.screen.height-1);
-            
+
             Eyelink('message', 'DISPLAY_COORDS %ld %ld %ld %ld', 0, 0, eyelink.screen.width-1, eyelink.screen.height-1);
             % set calibration type.
-            Eyelink('command', 'calibration_type = HV5');    
+            Eyelink('command', 'calibration_type = HV5');
             % Allow a supported EyeLink Host PC button box to accept calibration or drift-check/correction targets via button 5
             Eyelink('Command', 'button_function 5 "accept_target_fixation"');
             % %Eyelink('command', 'animation_target = videos/calibration/cal_bulls_eye.avi');
             % Eyelink('command', 'generate_default_targets = NO');
-            
+
             % set parser (conservative saccade thresholds)
             Eyelink('command', 'saccade_velocity_threshold = 35');
             Eyelink('command', 'saccade_acceleration_threshold = 9500');
-            
+
             %set to track diameter
             Eyelink('command', 'pupil_size_diameter = DIAMETER');
-            
+
             % set EDF file contents
                 % 5.1 retrieve tracker version and tracker software version
             [v,vs] = Eyelink('GetTrackerVersion');
             fprintf('Running experiment on a ''%s'' tracker.\n', vs );
             vsn = regexp(vs,'\d','match');
-            
+
             if v ==3 && str2double(vsn{1}) >= 4 % if EL 1000 and tracker version 4.xx or later
                 % remote mode possible add HTARGET ( head target)
                 Eyelink('command', 'file_event_filter = LEFT,RIGHT,FIXATION,SACCADE,BLINK,MESSAGE,BUTTON,INPUT');
@@ -120,7 +121,7 @@ classdef EyelinkControlClassBase < handle
                 Eyelink('command', 'link_sample_data  = LEFT,RIGHT,GAZE,GAZERES,AREA,STATUS,INPUT');
             end
         end
-        
+
         function delete(eyelink)
             if eyelink.status
                 Eyelink('Shutdown');        %close eyetracker
@@ -135,7 +136,7 @@ classdef EyelinkControlClassBase < handle
     %         el.backgroundcolour           = grey;
             % You must call this function to apply the changes made to the el structure above
                 EyelinkUpdateDefaults(eyelink.settings);
-        
+
                 % Calibrate the eye tracker
                 EyelinkDoTrackerSetup(eyelink.settings);
             end
@@ -149,7 +150,7 @@ classdef EyelinkControlClassBase < handle
             end
             % get the sample in the form of an event structure
             evt = Eyelink('NewestFloatSample');
-            gaze = struct(eye_used=eye_used, x=evt.gx, y=evt.gy);
+            gaze = struct(eye_used=eye_used, time=GetSecs(), x=evt.gx, y=evt.gy);
             eyelink.last_sample = gaze;
         end
 
@@ -194,4 +195,3 @@ classdef EyelinkControlClassBase < handle
         end
     end
 end
-

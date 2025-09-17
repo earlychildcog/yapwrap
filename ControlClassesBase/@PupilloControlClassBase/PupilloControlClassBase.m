@@ -1,14 +1,11 @@
-classdef PupilloControlClassBase < handle
+classdef PupilloControlClassBase < EyetrackingControlClassBase
     properties
-        status          logical = false
+        status          = 0
         dummy           = 0
-        ip              char = 'localhost'
+        ip              = 'localhost'
         port            double = 4799
         client
-        eventTime = zeros(10^4,1)
-        eventName = cell(10^4,1)
-        eventCount = 0;
-        eventTimeMulti = 0;
+        savefile
         calibrationFilename string = "doc/calibration.csv"
         calibrationTable table
         roiCalib        % the roi around the calibration point for drawing on control screen
@@ -16,10 +13,12 @@ classdef PupilloControlClassBase < handle
         buttonCalib = KbName('SPACE')
         screen_width = 1920;
         screen_height = 1080;
+        last_sample
+        settings
+        MISSING_DATA = -99999   % pupillo missing values are -1, but that is because gaze normalised between 0 and 1. But we need gaze with pixel coordinates if we want to do anything with it, and in that case -1 is not a good option. So define a function that gets the gaze and converts it to appropriate pixel based format with this missing vavue if pupillo gives -1
     end
     methods
         function  pupillo = PupilloControlClassBase(status)
-
             if nargin == 0 || ~status
                 return
             else
@@ -33,7 +32,7 @@ classdef PupilloControlClassBase < handle
                 pupillo.client = tcpclient(pupillo.ip, pupillo.port);
                 fprintf(" Connection established\n")
                 pause(0.5)
-                pupillo.client.UserData = [0 NaN NaN NaN]; % new or old, time, x, y
+                pupillo.client.UserData = pupillo;  % we pass reference to the pupillo object itself
                 pupillo.client.configureCallback("byte", 1, @callbackPupilloTcp);
                 pupillo.calibrationTable = readtable(pupillo.calibrationFilename);
                 pupillo.calibrationTable.stim = string(pupillo.calibrationTable.stim);
@@ -94,69 +93,39 @@ classdef PupilloControlClassBase < handle
                 end
             end
         end
-        function [eye_used, evt] = getGaze(~)
-            while Eyelink('NewFloatSampleAvailable') == 0 % waiting for sample...
-            end
-            eye_used = Eyelink('EyeAvailable');
-            evt = Eyelink('NewestFloatSample');
-            if eye_used == 2
-                eye_used = [0 1];
-            end
-        end
-        function eventSave(pupillo, name, time)
-            if pupillo.status
-                % saves events to send later to netstation
-                pupillo.eventCount = pupillo.eventCount + 1;
-                pupillo.eventName{pupillo.eventCount} = name;
-                if nargin > 2
-                    pupillo.eventTime(pupillo.eventCount) = time;
-                else
-                    pupillo.eventTime(pupillo.eventCount) = GetSecs;
-                end
-            end
-        end
-        function eventSaveMultiIntoOne(pupillo, name, time)
-            if pupillo.status
-                % saves events (ie key presses) that last for some time but we want to send only their onset
-                % to do: report the duration of the event based on how long a key is pressed
-                if time - pupillo.eventTimeMulti > 0.2
-                    pupillo.eventSave(name, time)
-                end
-                pupillo.eventTimeMulti = time;
-            end
-        end
-        function eventSend(pupillo, varargin)
-            if pupillo.status
-                fprintf('eeg triggers %d\n', pupillo.eventCount)
-                for iEvent = 1:pupillo.eventCount
-                    name = pupillo.eventName{iEvent};
-                    time = pupillo.eventTime(iEvent);
-                    NetStation('Event', name, time, 0.1 ,varargin{:});
-                end
-                pupillo.eventReset;
-            end
-        end
-        function eventSendAll(pupillo, varvalues)
-            % send all variables at once
+        function gaze = getgaze(pupillo, use_last)
             arguments
-                pupillo
-                varvalues   struct
+                pupillo PupilloControlClassBase;
+                use_last logical = true;
             end
-            if pupillo.status
-                names = fieldnames(varvalues);
-                values = struct2cell(varvalues);
-                values(cellfun(@islogical, values)) = cellfun(@double,values(cellfun(@islogical,values)), UniformOutput=false);     % turn logical to double
-                allargin = [names values]';
-                allargin = allargin(:);
-                pupillo.eventSend(allargin{:});
+            if use_last
+                gaze = pupillo.last_sample;
+            else
+                gaze = callbackPupilloTcp(pupillo.client);
             end
         end
-        function eventReset(pupillo)
-            if pupillo.status
-                pupillo.eventCount = 0;
-              	pupillo.eventTime = zeros(10^4,1);
-                pupillo.eventName = cell(10^4,1);
+        function write(pupillo)
+        end
+    end
+    methods (Static)
+        function gaze = callbackPupilloTcp(client, event)
+            pupillo = client.UserData;
+            while ~client.NumBytesAvailable, end
+            json = client.read(client.NumBytesAvailable, 'char');
+            json = strsplit(json, '}{'); % pupillo does not send newlines...                json{1}(1) = [];
+            json{end}(end) = [];
+            json = ['{' json{end} '}'];   % we get only the last packet
+            data = jsondecode(json);
+            if ~isempty(pupillo.last_sample), nSample = pupillo.last_sample.n + 1; else nSample=1; end
+            if data.s0.x==-1 || data.s0.y==-1   % original pupillo missing values
+                x=pupillo.MISSING_VALUE;
+                y=pupillo.MISSING_VALUE;
+            else
+                x=round(data.s0.x*pupillo.screen_width);
+                y=round(data.s0.y*pupillo.screen_height);
             end
+            gaze = struct(eye_used=0, time=data.t, x=x, y=y, n=nSample);
+            pupillo.last_sample = gaze;
         end
     end
 end
