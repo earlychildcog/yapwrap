@@ -26,7 +26,7 @@ classdef ExperimentControlClassBase < handle
         keyboard            KeyControlClassBase         = KeyControlClassBase     % keyboard settings
         image               ImageControlClassBase       = ImageControlClassBase   % image settings
         trial               TrialControlClassBase       = TrialControlClassBase   % trial settings
-        eyetracker          EyetrackerControlClassBase   % eyelink or pupillo?
+        eyetracker             % eyelink or pupillo?
         eeg                 EegControlClassBase         = EegControlClassBase      % EEG settings
         log                 LogControlClassBase         = LogControlClass
     end
@@ -67,7 +67,7 @@ classdef ExperimentControlClassBase < handle
                     sessionId = input(['\ngive sessionid (' [listSessions{:}] '):'],'s');
                 end
                 edfname = sprintf('%s%.3d%c.edf', xp.name, subjno, sessionId);
-                if exist(fullfile(xp.eyelink.edffolder, edfname),'file')>0
+                if exist(fullfile(xp.eyetracker.edffolder, edfname),'file')>0
                     warning('edf file for subject number %d session %c already exists, please choose another number', subjno, sessionId)
                     subjno = 0;
                     sessionId = '';
@@ -340,8 +340,8 @@ classdef ExperimentControlClassBase < handle
             ShowCursor();           %show cursor again
 
 
-            if xp.eyelink.status
-                xp.eyelink.cleanup;
+            if xp.eyetracker.status
+                xp.eyetracker.cleanup;
             end
 
             WaitSecs(1);

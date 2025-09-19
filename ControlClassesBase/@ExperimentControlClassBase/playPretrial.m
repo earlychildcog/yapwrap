@@ -21,7 +21,7 @@ timeTrigger1 = timeTrigger0;
 timeTriggerSound = timeTrigger0;
 durMaxIn  = 0.5;
 durMinOut = 0.05;
-xp.eyelink.write('attget start @%.3fsec', timeStim)
+xp.eyetracker.write('attget start @%.3fsec', timeStim)
 while flagLoop
 %     if newangle == 0
 %         xp.sound.which = xp.sound.data{2,1};
@@ -65,7 +65,7 @@ while flagLoop
 
 end
 xp.sound.stop;
-xp.eyelink.write('attget stop with %d @%.3fsec', flagResult, timeStim)
+xp.eyetracker.write('attget stop with %d @%.3fsec', flagResult, timeStim)
 
 
 

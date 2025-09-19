@@ -13,6 +13,8 @@ classdef PupilloControlClassBase < EyetrackingControlClassBase
         buttonCalib = KbName('SPACE')
         screen_width = 1920;
         screen_height = 1080;
+        screen        ScreenControlClassBase % Reference to screen control class
+        trial         TrialControlClassBase  % Reference to trial control class
         last_sample
         settings
         MISSING_DATA = -99999   % pupillo missing values are -1, but that is because gaze normalised between 0 and 1. But we need gaze with pixel coordinates if we want to do anything with it, and in that case -1 is not a good option. So define a function that gets the gaze and converts it to appropriate pixel based format with this missing vavue if pupillo gives -1

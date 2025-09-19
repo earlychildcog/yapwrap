@@ -24,7 +24,7 @@ if roiFix == roiFixIn(N) % if look away then back to the same: add to the former
 
     [durFixIn, timeFirstIn] = computeDurFix(roiFixIn(1:N), timeFixIn(1:N), roiFix, timeFix);
     if roiActive ~= roiFix && durFixIn >  xp.settings.timeOut
-        xp.eyelink.write('roichange: from %d to %d @%.3fsec', roiActive, roiFix, timeFix)
+        xp.eyetracker.write('roichange: from %d to %d @%.3fsec', roiActive, roiFix, timeFix)
         roiActive = roiFix;
     end
     

@@ -20,7 +20,7 @@ timeTrigger0 = GetSecs;
 timeTrigger1 = GetSecs;
 durMaxIn = 1;
 durMinOut = 0.05;
-xp.eyelink.write('attention getter (fix x) start @%.3fsec', timeStim)
+xp.eyetracker.write('attention getter (fix x) start @%.3fsec', timeStim)
 xp.sound.which = xp.sound.data{end,end+1-iFixX}; %whoop in
 
 while flagLoop
@@ -66,4 +66,4 @@ while flagLoop
 
 end
 xp.sound.stop;
-xp.eyelink.write('attget stop with %d @%.3fsec', flagResult, timeStim)
+xp.eyetracker.write('attget stop with %d @%.3fsec', flagResult, timeStim)
