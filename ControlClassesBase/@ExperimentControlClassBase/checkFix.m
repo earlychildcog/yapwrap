@@ -15,7 +15,7 @@ persistent timeOutOfScreenStart
 persistent roiOld
 whichrect(whichrect <= 0) = size(xp.screen.rect,2) + whichrect(whichrect <= 0);
 if nargin < 5
-    verbose = true;
+    verbose = false;
     if nargin < 4
         keyboardDummy = true;
         if nargin < 3

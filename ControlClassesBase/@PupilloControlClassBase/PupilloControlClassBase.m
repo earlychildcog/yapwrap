@@ -35,7 +35,7 @@ classdef PupilloControlClassBase < EyetrackingControlClassBase
                 fprintf(" Connection established\n")
                 pause(0.5)
                 pupillo.client.UserData = pupillo;  % we pass reference to the pupillo object itself
-                pupillo.client.configureCallback("byte", 1, @callbackPupilloTcp);
+                pupillo.client.configureCallback("byte", 65, @callbackPupilloTcp);
                 pupillo.calibrationTable = readtable(pupillo.calibrationFilename);
                 pupillo.calibrationTable.stim = string(pupillo.calibrationTable.stim);
                 if max(pupillo.calibrationTable{:, ["x" "y"]}, [], [1 2]) > 1            % normalise if x and y given in pixel coordinates
