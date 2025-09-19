@@ -15,7 +15,7 @@ persistent timeOutOfScreenStart
 persistent roiOld
 whichrect(whichrect <= 0) = size(xp.screen.rect,2) + whichrect(whichrect <= 0);
 if nargin < 5
-    verbose = false;
+    verbose = true;
     if nargin < 4
         keyboardDummy = true;
         if nargin < 3
@@ -63,7 +63,8 @@ timeFixated = GetSecs;
 
 % which eye to use
 if xp.eyetracker.status == 1
-    gaze = xp.eyetracker.getgaze;
+    pause(0.0001)
+    gaze = xp.eyetracker.last_sample;
     x = gaze.x;
     y = gaze.y;
     eye_used = gaze.eye_used;
@@ -76,7 +77,7 @@ if xp.eyetracker.status == 1
                 fprintf('eye %d:%f %f %.4f\n',eye_used(iEye), x(iEye), y(iEye), GetSecs);
             end
             % do we have valid data and is the pupil visible?
-            if x(iEye)~=xp.eyetracker.settings.MISSING_DATA && y(iEye)~=xp.eyetracker.settings.MISSING_DATA && evt.pa(eye_used(iEye)+1)>0
+            if x(iEye)~=xp.eyetracker.MISSING_DATA && y(iEye)~=xp.eyetracker.MISSING_DATA % && evt.pa(eye_used(iEye)+1)>0
                 % check if we hit any ROI
                 for iROI = 1:nROI
                     if (y(iEye) > rectPadded(2,iROI)) && (y(iEye) < rectPadded(4,iROI))

@@ -211,7 +211,7 @@ classdef ExperimentControlClassBase < handle
                 Screen('CopyWindow',xp.screen.monitor(1).offwin,xp.screen.monitor(2).offwin, xp.screen.monitor(1).offrect, xp.screen.monitor(2).offrect)                 % offwin1 -> offwin2
                 % if pupillo is used, plot gaze
                 if xp.eyetracker.status && ~isempty(xp.eyetracker.last_sample)
-                    gaze = xp.eyetracker.last_sample;
+                    pause(0.0001)
                     x = xp.eyetracker.last_sample.x(1);
                     y = xp.eyetracker.last_sample.y(1);
                     Screen('glPoint', xp.screen.monitor(2).offwin, [0 255 0], x, y, 25);

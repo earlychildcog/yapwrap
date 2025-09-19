@@ -15,9 +15,9 @@ classdef PupilloControlClassBase < EyetrackingControlClassBase
         screen_height = 1080;
         screen        ScreenControlClassBase % Reference to screen control class
         trial         TrialControlClassBase  % Reference to trial control class
-        last_sample
         settings
         MISSING_DATA = -99999   % pupillo missing values are -1, but that is because gaze normalised between 0 and 1. But we need gaze with pixel coordinates if we want to do anything with it, and in that case -1 is not a good option. So define a function that gets the gaze and converts it to appropriate pixel based format with this missing vavue if pupillo gives -1
+        last_sample = struct(eye_used=0, time=posixtime(datetime('now')), x=-99999, y=-99999, n=0);
     end
     methods
         function  pupillo = PupilloControlClassBase(status)
@@ -106,28 +106,14 @@ classdef PupilloControlClassBase < EyetrackingControlClassBase
                 gaze = callbackPupilloTcp(pupillo.client);
             end
         end
-        function write(pupillo)
+        function write(~, varargin)
+            % not implemented yet, print on screen instead
+            fprintf('[%s]: ', string(datetime('now', Format='uuuu-MM-dd HH:mm:ss.SSS')))
+            fprintf(varargin{:})
+            fprintf('\n')
         end
-    end
-    methods (Static)
-        function gaze = callbackPupilloTcp(client, event)
-            pupillo = client.UserData;
-            while ~client.NumBytesAvailable, end
-            json = client.read(client.NumBytesAvailable, 'char');
-            json = strsplit(json, '}{'); % pupillo does not send newlines...                json{1}(1) = [];
-            json{end}(end) = [];
-            json = ['{' json{end} '}'];   % we get only the last packet
-            data = jsondecode(json);
-            if ~isempty(pupillo.last_sample), nSample = pupillo.last_sample.n + 1; else nSample=1; end
-            if data.s0.x==-1 || data.s0.y==-1   % original pupillo missing values
-                x=pupillo.MISSING_VALUE;
-                y=pupillo.MISSING_VALUE;
-            else
-                x=round(data.s0.x*pupillo.screen_width);
-                y=round(data.s0.y*pupillo.screen_height);
-            end
-            gaze = struct(eye_used=0, time=data.t, x=x, y=y, n=nSample);
-            pupillo.last_sample = gaze;
+        function cleanup(pupillo)
+            pupillo.stoprec;
         end
     end
 end
