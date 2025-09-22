@@ -1,6 +1,8 @@
 
 function gaze = callbackPupilloTcp(client, event)
+persistent time_mirror_update
 if client.NumBytesAvailable
+    if isempty(time_mirror_update), time_mirror_update=GetSecs; end
     pupillo = client.UserData;
     json = client.read(client.NumBytesAvailable, 'char');
     json = strsplit(json, '}{'); % pupillo does not send newlines...                json{1}(1) = [];
@@ -19,5 +21,8 @@ if client.NumBytesAvailable
     gaze = struct(eye_used=0, time=data.t, x=x, y=y, n=nSample);
     pupillo.last_sample = gaze;
     pause(0.0001)
+    if time_mirror_update - GetSecs > 0.06
+        pupillo.updataGaze;
+    end
 end
 end

@@ -30,7 +30,6 @@ classdef ExperimentControlClassBase < handle
         eeg                 EegControlClassBase         = EegControlClassBase      % EEG settings
         log                 LogControlClassBase         = LogControlClass
     end
-
     methods
         function xp = ExperimentControlClassBaseBase(status)
 
@@ -191,7 +190,7 @@ classdef ExperimentControlClassBase < handle
         end
 
         % displays texture in buffer
-        function time = flip(xp,time,dontclear, roi, colour, text)
+        function time = flip(xp,time,dontclear, roi_, colour_, text_)
             % tic
             if nargin < 2 || isempty(time)
                 time = 0;
@@ -200,14 +199,68 @@ classdef ExperimentControlClassBase < handle
                 dontclear = 0;
             end
             if nargin < 4
-                roi = [];
-                colour = [];
+                roi_ = [];
+                colour_ = [];
             end
             if nargin < 6
-                text = '';
+                text_ = '';
             end
+            % for mirroring: 
+            % 1. we copy the content of the main presentation screen to an off-window bound to it; 
+            % 2. we copy the off-window to an off-window bound to the mirror-screen
+            % 3. we draw gaze (and other stuff if needed) on the off-window of the mirror-screen
+            % 4. we copy the off-window to the main window of the mirror-screen
             if ~isempty(xp.screen.mirror)
                 Screen('CopyWindow',xp.screen.monitor(1).win,xp.screen.monitor(1).offwin, xp.screen.monitor(1).rect, xp.screen.monitor(1).offrect)                                   % win1 -> offwin1
+            end
+            time = Screen('Flip',xp.screen.win, time, dontclear);
+            % if ~isempty(xp.screen.mirror)
+            %     Screen('CopyWindow',xp.screen.monitor(1).win,xp.screen.monitor(1).offwin, xp.screen.monitor(1).rect, xp.screen.monitor(1).offrect)                                   % win1 -> offwin1
+            %     Screen('CopyWindow',xp.screen.monitor(1).offwin,xp.screen.monitor(2).offwin, xp.screen.monitor(1).offrect, xp.screen.monitor(2).offrect)                 % offwin1 -> offwin2
+            %     % if pupillo is used, plot gaze
+            %     if xp.eyetracker.status && ~isempty(xp.eyetracker.last_sample)
+            %         pause(0.0001)
+            %         x = xp.eyetracker.last_sample.x(1);
+            %         y = xp.eyetracker.last_sample.y(1);
+            %         Screen('glPoint', xp.screen.monitor(2).offwin, [0 255 0], x, y, 25);
+            %     end
+            %     % draw roi(s)
+            %     if xp.eyetracker.status && isa(xp.eyetracker, 'PupilloControlClassBase')
+            %         roi_ = [roi_ xp.eyetracker.roiCalib];
+            %         colour_ = [colour_; xp.eyetracker.roiColour];
+            %         xp.eyetracker.roiCalib = [];
+            %         xp.eyetracker.roiColour = [];
+            %     end
+            %     if ~isempty(roi_)
+            %         Screen('FrameRect', xp.screen.monitor(2).offwin, colour_, roi_);
+            %     end
+            %     if ~isempty(text_)
+            %         Screen('DrawText', xp.screen.monitor(2).offwin, text_, 100, 100);
+            %     end
+            %     Screen('CopyWindow',xp.screen.monitor(2).offwin,xp.screen.monitor(2).win, xp.screen.monitor(2).offrect, xp.screen.monitor(2).rect)     % offwin2 -> win2
+            % end
+            % toc
+            % time = Screen('Flip',xp.screen.win, time, dontclear);
+            % if xp.screen.mirror > 0
+            %     Screen('Flip',xp.screen.monitor(xp.screen.mirror).win, time, dontclear);
+            % end
+            if ~isempty(xp.screen.mirror)
+                if xp.eyetracker.status && isa(xp.eyetracker, 'PupilloControlClassBase')
+                    roi_ = [roi_ xp.eyetracker.roiCalib];
+                    colour_ = [colour_; xp.eyetracker.roiColour];
+                    xp.eyetracker.roiCalib = [];
+                    xp.eyetracker.roiColour = [];
+                end
+                xp.screen.draw_roi = roi_;
+                xp.screen.draw_colour = colour_;
+                xp.screen.draw_text = text_;
+            end
+        end
+        % MOVING TO EYETRACKER "INTERFACE" AS METHOD
+        function updateGaze(xp)
+            % updates the gaze
+            if ~isempty(xp.screen.mirror)
+                % Screen('CopyWindow',xp.screen.monitor(1).win,xp.screen.monitor(1).offwin, xp.screen.monitor(1).rect, xp.screen.monitor(1).offrect)                                   % win1 -> offwin1
                 Screen('CopyWindow',xp.screen.monitor(1).offwin,xp.screen.monitor(2).offwin, xp.screen.monitor(1).offrect, xp.screen.monitor(2).offrect)                 % offwin1 -> offwin2
                 % if pupillo is used, plot gaze
                 if xp.eyetracker.status && ~isempty(xp.eyetracker.last_sample)
@@ -217,28 +270,16 @@ classdef ExperimentControlClassBase < handle
                     Screen('glPoint', xp.screen.monitor(2).offwin, [0 255 0], x, y, 25);
                 end
                 % draw roi(s)
-                if xp.eyetracker.status && isa(xp.eyetracker, 'PupilloControlClassBase')
-                    roi = [roi xp.eyetracker.roiCalib];
-                    colour = [colour; xp.eyetracker.roiColour];
-                    xp.eyetracker.roiCalib = [];
-                    xp.eyetracker.roiColour = [];
+                if ~isempty(xp.screen.draw_roi)
+                    Screen('FrameRect', xp.screen.monitor(2).offwin, xp.screen.draw_colour, xp.screen.draw_roi);
                 end
-                if ~isempty(roi)
-                    Screen('FrameRect', xp.screen.monitor(2).offwin, colour, roi);
-                end
-                if ~isempty(text)
-                    Screen('DrawText', xp.screen.monitor(2).offwin, text, 100, 100);
+                if ~isempty(xp.screen.draw_text)
+                    Screen('DrawText', xp.screen.monitor(2).offwin, xp.screen.draw_text, 100, 100);
                 end
                 Screen('CopyWindow',xp.screen.monitor(2).offwin,xp.screen.monitor(2).win, xp.screen.monitor(2).offrect, xp.screen.monitor(2).rect)     % offwin2 -> win2
-            end
-            % toc
-            time = Screen('Flip',xp.screen.win, time, dontclear);
-            if xp.screen.mirror > 0
-                Screen('Flip',xp.screen.monitor(xp.screen.mirror).win, time, dontclear);
+                Screen('Flip',xp.screen.monitor(xp.screen.mirror).win, 0, dontclear);
             end
         end
-
-
         %% experiment control functions
         function state = pause(xp)
             xp.suspend;
