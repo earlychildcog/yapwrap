@@ -13,9 +13,10 @@ function [roiFixated, timeFixated, keyFlip] = checkFix(xp, whichrect, padding, k
 
 persistent timeOutOfScreenStart
 persistent roiOld
+% this allows us to use 0 or negative numbers in the whichrect variable to index rects from the end of the xp.screen.rect matrix
 whichrect(whichrect <= 0) = size(xp.screen.rect,2) + whichrect(whichrect <= 0);
 if nargin < 5
-    verbose = false;
+    verbose = xp.debug > 0;
     if nargin < 4
         keyboardDummy = true;
         if nargin < 3

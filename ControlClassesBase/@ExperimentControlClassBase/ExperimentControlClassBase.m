@@ -100,8 +100,7 @@ classdef ExperimentControlClassBase < handle
             elseif ~isfolder('logs')
                 mkdir('logs')
             end
-            diary(sprintf('logs/debug/%s_%.3d.log',xp.name,xp.subject));     % a basic log of command line trash
-
+            diary(sprintf('logs/debug/%s_%s.log', xp.name, string(datetime('now', Format="uuuuMMdd"))));     % a basic log of command line trash
 
             if ~xp.debug            % unless we operate in debug mode, we disable mouse cursor and keyboard input
                 ListenChar(2);      % Disable keyboard input messing up in the command window/script
@@ -114,7 +113,7 @@ classdef ExperimentControlClassBase < handle
             xp.sound.init;          % initialise sound
 
             fprintf('\n****************************************\nExperiment %s\n',xp.name);
-            fprintf('%s\n',datestr(now));
+            fprintf('%s\n',string(datetime('now', Format='uuuu-MM-dd''T''HH:mm:ss.SSS')));
             fprintf('Subject %s\n\n',xp.subject);
 
             xp.eyetracker.screen = xp.screen;
