@@ -122,6 +122,8 @@ classdef ExperimentControlClassBase < handle
                 xp.eyetracker.calib_pahandle = xp.sound.pahandle;
             end
             xp.log.trial = xp.trial;
+            fprintf("Note: the offset GetSecs - posixtime is %.4f\n", GetSecs - posixtime(datetime('now')))
+
         end
 
         %class destructor

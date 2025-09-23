@@ -60,7 +60,7 @@ end
 %     Screen('FillRect',xp.screen.win, 1, rectPadded(:,whichrect~=1));
 % end
 % timeFixated = NaN;
-timeFixated = GetSecs;
+
 
 % which eye to use
 if xp.eyetracker.status == 1
@@ -93,6 +93,7 @@ if xp.eyetracker.status == 1
     end
 else
     roiFixated  = 0;
+    timeFixated = GetSecs;
 end
 
 % if we track both eyes...
@@ -157,7 +158,7 @@ if keyboardDummy
     end
 end
 % looking away condition to end trial
-if roiFixated == 0                    % AOI 0 = no gaze on screen
+if roiFixated == 0 && xp.eyetracker.status == 1                   % AOI 0 = no gaze on screen
     if isempty(timeOutOfScreenStart)
         timeOutOfScreenStart = timeFixated;
     elseif timeFixated - timeOutOfScreenStart > xp.settings.durMaxLookAway

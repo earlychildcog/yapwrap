@@ -16,7 +16,7 @@ if client.NumBytesAvailable
         x=round(data.s0.gaze.x*pupillo.screen_width);
         y=round(data.s0.gaze.y*pupillo.screen_height);
     end
-    gaze = struct(eye_used=0, time=data.t, x=x, y=y, n=nSample);
+    gaze = struct(eye_used=0, time=data.t/1000 + pupillo.offset_getsecs, x=x, y=y, n=nSample);
     pupillo.last_sample = gaze;
     pause(0.0001)
 end

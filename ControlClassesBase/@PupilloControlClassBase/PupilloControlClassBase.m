@@ -16,6 +16,7 @@ classdef PupilloControlClassBase < EyetrackingControlClassBase
         screen        ScreenControlClassBase % Reference to screen control class
         trial         TrialControlClassBase  % Reference to trial control class
         settings
+        offset_getsecs = GetSecs - posixtime(datetime('now'));
         MISSING_DATA = -99999   % pupillo missing values are -1, but that is because gaze normalised between 0 and 1. But we need gaze with pixel coordinates if we want to do anything with it, and in that case -1 is not a good option. So define a function that gets the gaze and converts it to appropriate pixel based format with this missing vavue if pupillo gives -1
         last_sample = struct(eye_used=0, time=posixtime(datetime('now')), x=-99999, y=-99999, n=0);
     end
@@ -41,6 +42,7 @@ classdef PupilloControlClassBase < EyetrackingControlClassBase
                 if max(pupillo.calibrationTable{:, ["x" "y"]}, [], [1 2]) > 1            % normalise if x and y given in pixel coordinates
                     pupillo.calibrationTable{:, ["x" "y"]} = pupillo.calibrationTable{:, ["x" "y"]}./[pupillo.screen_width pupillo.screen_height];       % FIX TO CHECK DIMENSIONS FROM SOMEWHERE!!!!!
                 end
+                fprintf("For pupillo class: the offset GetSecs - posixtime is %.4f\n", pupillo.offset_getsecs)
             end
         end
         % in the future we will set the trial arguments automatically through the trialcontrolclass
