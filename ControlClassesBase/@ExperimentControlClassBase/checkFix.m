@@ -55,10 +55,10 @@ end
 % ONLY FOR DEBUGGING --- DRAW NEW RECT TO SCREEN
 % Note: make sure the background is not drawn in the DrawAllCards function
 % as well
-if verbose
-    Screen('FillRect',xp.screen.win, 0, [0; 0; 1280; 1024]);
-    Screen('FillRect',xp.screen.win, 1, rectPadded(:,whichrect~=1));
-end
+% if verbose
+%     Screen('FillRect',xp.screen.win, 0, [0; 0; 1280; 1024]);
+%     Screen('FillRect',xp.screen.win, 1, rectPadded(:,whichrect~=1));
+% end
 % timeFixated = NaN;
 timeFixated = GetSecs;
 
@@ -75,7 +75,7 @@ if xp.eyetracker.status == 1
         for iEye = 1:length(eye_used)
             % if we do, get current gaze position from sample
             if verbose
-                fprintf('eye %d:%f %f %.4f\n',eye_used(iEye), x(iEye), y(iEye), GetSecs);
+                fprintf('[%.4f gaze] eye %d:%f %f %.4f\n', GetSecs, eye_used(iEye), x(iEye), y(iEye), timeFixated);
             end
             % do we have valid data and is the pupil visible?
             if x(iEye)~=xp.eyetracker.MISSING_DATA && y(iEye)~=xp.eyetracker.MISSING_DATA % && evt.pa(eye_used(iEye)+1)>0
