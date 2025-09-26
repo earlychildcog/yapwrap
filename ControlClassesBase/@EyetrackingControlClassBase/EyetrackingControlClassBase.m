@@ -50,4 +50,29 @@ classdef (Abstract) EyetrackingControlClassBase < handle
 
 
     end
+    methods
+        function updateGaze(eyetracker)
+            % updates the gaze
+            if eyetracker.screen.status && ~isempty(eyetracker.screen.mirror)
+                % Screen('CopyWindow',eyetracker.screen.monitor(1).win,eyetracker.screen.monitor(1).offwin, eyetracker.screen.monitor(1).rect, eyetracker.screen.monitor(1).offrect)                                   % win1 -> offwin1
+                Screen('CopyWindow',eyetracker.screen.monitor(1).offwin,eyetracker.screen.monitor(2).offwin, eyetracker.screen.monitor(1).offrect, eyetracker.screen.monitor(2).offrect)                 % offwin1 -> offwin2
+                % if pupillo is used, plot gaze
+                if eyetracker.status && ~isempty(eyetracker.last_sample) && eyetracker.last_sample.valid
+                    pause(0.0001)
+                    x = eyetracker.last_sample.x(1);
+                    y = eyetracker.last_sample.y(1);
+                    Screen('glPoint', eyetracker.screen.monitor(2).offwin, [0 255 0], x, y, 25);
+                end
+                % draw roi(s)
+                if ~isempty(eyetracker.screen.draw_roi)
+                    Screen('FrameRect', eyetracker.screen.monitor(2).offwin, eyetracker.screen.draw_colour, eyetracker.screen.draw_roi);
+                end
+                if ~isempty(eyetracker.screen.draw_text)
+                    Screen('DrawText', eyetracker.screen.monitor(2).offwin, eyetracker.screen.draw_text, 100, 100);
+                end
+                Screen('CopyWindow',eyetracker.screen.monitor(2).offwin,eyetracker.screen.monitor(2).win, eyetracker.screen.monitor(2).offrect, eyetracker.screen.monitor(2).rect)     % offwin2 -> win2
+                Screen('Flip',eyetracker.screen.monitor(eyetracker.screen.mirror).win, 0, dontclear);
+            end
+        end
+    end
 end

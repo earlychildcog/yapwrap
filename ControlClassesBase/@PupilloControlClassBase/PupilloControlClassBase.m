@@ -35,8 +35,8 @@ classdef PupilloControlClassBase < EyetrackingControlClassBase
                 pupillo.client = tcpclient(pupillo.ip, pupillo.port);
                 fprintf(" Connection established\n")
                 pause(0.5)
-                pupillo.client.UserData = pupillo;  % we pass reference to the pupillo object itself
-                pupillo.client.configureCallback("byte", 65, @callbackPupilloTcp);
+                % pupillo.client.UserData = pupillo;  % we pass reference to the pupillo object itself
+                pupillo.client.configureCallback("byte", 65, @(client,event)pupillo.callbackPupilloTcp(client,event));
                 pupillo.calibrationTable = readtable(pupillo.calibrationFilename);
                 pupillo.calibrationTable.stim = string(pupillo.calibrationTable.stim);
                 if max(pupillo.calibrationTable{:, ["x" "y"]}, [], [1 2]) > 1            % normalise if x and y given in pixel coordinates
@@ -108,6 +108,39 @@ classdef PupilloControlClassBase < EyetrackingControlClassBase
                 gaze = callbackPupilloTcp(pupillo.client);
             end
         end
+
+function callbackPupilloTcp(pupillo, client, event)
+persistent time_mirror_update
+if client.NumBytesAvailable
+    if isempty(time_mirror_update), time_mirror_update=GetSecs; end
+    % pupillo = client.UserData;
+    json = client.read(client.NumBytesAvailable, 'char');
+    json = strsplit(json, '}{'); % pupillo does not send newlines...                json{1}(1) = [];
+    json{end}(end) = [];
+    json{1}(1) = [];
+    json = ['{' json{end} '}'];   % we get only the last packet
+    data = jsondecode(json);
+    if ~isempty(pupillo.last_sample)
+        nSample = pupillo.last_sample.n + 1; 
+    else 
+        nSample=1; 
+    end
+    if data.s0.gaze.x==-1 || data.s0.gaze.y==-1   % original pupillo missing values
+        x=pupillo.MISSING_DATA;
+        y=pupillo.MISSING_DATA;
+        valid=true;
+    else
+        x=round(data.s0.gaze.x*pupillo.screen_width);
+        y=round(data.s0.gaze.y*pupillo.screen_height);
+        valid=false;
+    end
+    pupillo.last_sample = struct(valid=valid, eye_used=0, time=data.t, x=x, y=y, n=nSample);
+    pause(0.0001)
+    if time_mirror_update - GetSecs > 0.06
+        pupillo.updataGaze;
+    end
+end
+end
         function write(~, varargin)
             % not implemented yet, print on screen instead
             fprintf('[%s]: ', string(datetime('now', Format='uuuu-MM-dd HH:mm:ss.SSS')))
