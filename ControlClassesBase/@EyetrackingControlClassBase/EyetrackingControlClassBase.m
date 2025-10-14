@@ -10,7 +10,7 @@ classdef (Abstract) EyetrackingControlClassBase < handle
         screen        ScreenControlClassBase % Reference to screen control class
         trial         TrialControlClassBase  % Reference to trial control class
         savefile      char                   % Filename for saving eye tracking data
-        last_sample   struct                 % Last sample data from eye tracker
+        last_sample   GazeSampleClass        % Last sample data from eye tracker
         MISSING_DATA  double                 % which value missing data should be in; avoid NaN
     end
     methods
@@ -57,7 +57,8 @@ classdef (Abstract) EyetrackingControlClassBase < handle
                 % Screen('CopyWindow',eyetracker.screen.monitor(1).win,eyetracker.screen.monitor(1).offwin, eyetracker.screen.monitor(1).rect, eyetracker.screen.monitor(1).offrect)                                   % win1 -> offwin1
                 Screen('CopyWindow',eyetracker.screen.monitor(1).offwin,eyetracker.screen.monitor(2).offwin, eyetracker.screen.monitor(1).offrect, eyetracker.screen.monitor(2).offrect)                 % offwin1 -> offwin2
                 % if pupillo is used, plot gaze
-                if eyetracker.status && ~isempty(eyetracker.last_sample) && eyetracker.last_sample.valid
+                if eyetracker.status && ~isempty(eyetracker.last_sample)
+                    if eyetracker.last_sample.x ~= eyetracker.MISSING_DATA
                     pause(0.0001)
                     x = eyetracker.last_sample.x(1);
                     y = eyetracker.last_sample.y(1);
