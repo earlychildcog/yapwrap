@@ -54,15 +54,17 @@ classdef (Abstract) EyetrackingControlClassBase < handle
         function updateGaze(eyetracker)
             % updates the gaze
             if eyetracker.screen.status && ~isempty(eyetracker.screen.mirror)
+                dontclear = true;
                 % Screen('CopyWindow',eyetracker.screen.monitor(1).win,eyetracker.screen.monitor(1).offwin, eyetracker.screen.monitor(1).rect, eyetracker.screen.monitor(1).offrect)                                   % win1 -> offwin1
                 Screen('CopyWindow',eyetracker.screen.monitor(1).offwin,eyetracker.screen.monitor(2).offwin, eyetracker.screen.monitor(1).offrect, eyetracker.screen.monitor(2).offrect)                 % offwin1 -> offwin2
                 % if pupillo is used, plot gaze
                 if eyetracker.status && ~isempty(eyetracker.last_sample)
                     if eyetracker.last_sample.x ~= eyetracker.MISSING_DATA
-                    pause(0.0001)
-                    x = eyetracker.last_sample.x(1);
-                    y = eyetracker.last_sample.y(1);
-                    Screen('glPoint', eyetracker.screen.monitor(2).offwin, [0 255 0], x, y, 25);
+                        pause(0.0001)
+                        x = eyetracker.last_sample.x(1);
+                        y = eyetracker.last_sample.y(1);
+                        Screen('glPoint', eyetracker.screen.monitor(2).offwin, [0 255 0], x, y, 25);
+                    end
                 end
                 % draw roi(s)
                 if ~isempty(eyetracker.screen.draw_roi)

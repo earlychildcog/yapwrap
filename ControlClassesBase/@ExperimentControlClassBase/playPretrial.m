@@ -24,8 +24,8 @@ durMinOut = 0.05;
 xp.eyetracker.write('attget start @%.3fsec', timeStim)
 while flagLoop
 %     if newangle == 0
-%         xp.sound.which = xp.sound.data{2,1};
-%         xp.sound.play;
+%         % xp.sound.which = xp.sound.data{2,1};
+%         xp.sound.play(2,1);
 %     end
 
     if GetSecs - timeStim > durframe
@@ -37,8 +37,9 @@ while flagLoop
         % Play a sound every 3s
     if GetSecs-timeTriggerSound > 3 || timeTriggerSound == timeTrigger0
         xp.sound.stop;
-        xp.sound.which = xp.sound.data{end,end+1-iFixX};
-        xp.sound.play;
+        % % xp.sound.which = xp.sound.data{end,end+1-iFixX};
+        
+        xp.sound.play(size(xp.sound.data,1), size(xp.sound.data,2)+1-iFixX);
         timeTriggerSound = GetSecs; %reinitialise
     end
     [flagTrigger, timeTrigger] = xp.checkFix(-1, 1/15);           % do we need padding? change 0 to sth

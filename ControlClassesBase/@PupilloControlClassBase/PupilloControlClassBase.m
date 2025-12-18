@@ -121,18 +121,18 @@ if client.NumBytesAvailable
     json = ['{' json{end} '}'];   % we get only the last packet
     data = jsondecode(json);
     if ~isempty(pupillo.last_sample)
-        nSample = pupillo.last_sample.n + 1; 
+        nSample = pupillo.last_sample.nSample + 1; 
     else 
         nSample=1; 
     end
     if data.s0.gaze.x==-1 || data.s0.gaze.y==-1   % original pupillo missing values
         x=pupillo.MISSING_DATA;
         y=pupillo.MISSING_DATA;
-        valid=true;
+        valid=false;
     else
         x=round(data.s0.gaze.x*pupillo.screen_width);
         y=round(data.s0.gaze.y*pupillo.screen_height);
-        valid=false;
+        valid=true;
     end
     pupillo.last_sample = struct(valid=valid, eye_used=0, time=data.t, x=x, y=y, n=nSample);
     pause(0.0001)

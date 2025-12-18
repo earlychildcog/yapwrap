@@ -43,10 +43,10 @@ if keyIsDown
     % plays attention sound
     elseif any(keys ==  key.s)       
         if isempty(timeLastSound) || keyOnset - timeLastSound > 0.5       % making sure it is not just key staying pressed
-            xp.sound.which = xp.sound.data{1,randi(6)};
+            % xp.sound.which = xp.sound.data{1,randi(6)};
             timeLastSound = keyOnset;
             xp.sound.stop;
-            xp.sound.play;
+            xp.sound.play(1,randi(6));
             xp.eyetracker.write('Pressed s key - play sound random attention sound @%.3fsec',keyOnset)
             xp.eeg.eventSaveMultiIntoOne('ksou', timeLastSound)
         end

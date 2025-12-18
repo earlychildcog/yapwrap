@@ -21,8 +21,8 @@ while flagResult < 0
         xp.trial.varValue.result = flagResult;
         xp.eyetracker.stoprec;
         idBreak = -flagResult-20;
-        xp.sound.which = xp.sound.data{3,idBreak};
-        xp.videoPlay(xp.trial.videoList(idBreak), 1, 1);
+        % xp.sound.which = xp.sound.data{3,idBreak};
+        xp.videoPlay(xp.trial.videoList(idBreak), rectID=1, volume=1);
         xp.eyetracker.startrec;
     elseif flagResult == -3 % skip trial; get a small break first, though
         xp.trial.varValue.result = flagResult;

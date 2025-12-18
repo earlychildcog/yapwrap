@@ -21,7 +21,7 @@ timeTrigger1 = GetSecs;
 durMaxIn = 1;
 durMinOut = 0.05;
 xp.eyetracker.write('attention getter (fix x) start @%.3fsec', timeStim)
-xp.sound.which = xp.sound.data{end,end+1-iFixX}; %whoop in
+% xp.sound.which = xp.sound.data{end,end+1-iFixX}; %whoop in
 
 while flagLoop
 
