@@ -12,7 +12,7 @@ classdef SoundControlClassBase < handle
         subfolders  % automatic
         filenames   % automatic
         data        % the audio data to play (automatic)
-        which      (1,2) double % id of the sound to play
+        which      %(1,2) double % id of the sound to play
         when                                = 0;
         volume                              = 1;
     end

@@ -240,7 +240,7 @@ classdef ExperimentControlClassBase < handle
                 end
                 Screen('CopyWindow',xp.screen.monitor(2).offwin,xp.screen.monitor(2).win, xp.screen.monitor(2).offrect, xp.screen.monitor(2).rect)     % offwin2 -> win2
             end
-            toc
+            % toc
             time = Screen('Flip',xp.screen.win, time, dontclear);
             if xp.screen.mirror > 0
                 Screen('Flip',xp.screen.monitor(xp.screen.mirror).win, time, dontclear);
