@@ -26,7 +26,10 @@ classdef (Abstract) EyetrackingControlClassBase < handle
         init(eyetracker)
         % Initialize the eye tracking system
         % Should set up connection, configure settings, and set status to true
-
+        
+        newsession(eyetracker, id, path_data)
+        % Start a new session. Set path for where data is saved
+        
         calibrate(eyetracker, varargin)
         % Perform calibration of the eye tracking system
         % May accept optional parameters specific to the tracking system

@@ -45,6 +45,25 @@ classdef PupilloControlClassBase < EyetrackingControlClassBase
                 fprintf("For pupillo class: the offset GetSecs - posixtime is %.4f\n", pupillo.offset_getsecs)
             end
         end
+        function newsession(pupillo, id, path_data)
+            arguments
+                pupillo PupilloControlClassBase
+                id (1,1) string
+                path_data (1,1) string {mustBeFolder} = "E:\qualia"
+            end
+            path_ = fullfile(path_data, id);
+            iAttempt = 0;
+            while isfolder(path_)
+                path_ = fullfile(path_data, sprintf("%s_%.3d", id, iAttempt));
+                warning("folder exists; modifying the destination folder to %s", path_)
+                iAttempt = iAttempt + 1;
+            end
+            mkdir(path_)
+            msg = jsonencode(struct(a="newSession", p=[id, path_, false]));
+            pupillo.client.write(msg)
+            % start also the camera
+            pupillo.client.write('{"a":"cameraStatus","p":["2247011"]}')
+        end
         % in the future we will set the trial arguments automatically through the trialcontrolclass
         function startrec(pupillo, trialId, filename)
             arguments
@@ -105,42 +124,58 @@ classdef PupilloControlClassBase < EyetrackingControlClassBase
             if use_last
                 gaze = pupillo.last_sample;
             else
-                gaze = callbackPupilloTcp(pupillo.client);
+                gaze = pupillo.callbackPupilloTcp(pupillo.client);
             end
         end
 
-function callbackPupilloTcp(pupillo, client, event)
-persistent time_mirror_update
-if client.NumBytesAvailable
-    if isempty(time_mirror_update), time_mirror_update=GetSecs; end
-    % pupillo = client.UserData;
-    json = client.read(client.NumBytesAvailable, 'char');
-    json = strsplit(json, '}{'); % pupillo does not send newlines...                json{1}(1) = [];
-    json{end}(end) = [];
-    json{1}(1) = [];
-    json = ['{' json{end} '}'];   % we get only the last packet
-    data = jsondecode(json);
-    if ~isempty(pupillo.last_sample)
-        nSample = pupillo.last_sample.nSample + 1; 
-    else 
-        nSample=1; 
-    end
-    if data.s0.gaze.x==-1 || data.s0.gaze.y==-1   % original pupillo missing values
-        x=pupillo.MISSING_DATA;
-        y=pupillo.MISSING_DATA;
-        valid=false;
-    else
-        x=round(data.s0.gaze.x*pupillo.screen_width);
-        y=round(data.s0.gaze.y*pupillo.screen_height);
-        valid=true;
-    end
-    pupillo.last_sample = struct(valid=valid, eye_used=0, time=data.t, x=x, y=y, n=nSample);
-    pause(0.0001)
-    if time_mirror_update - GetSecs > 0.06
-        pupillo.updataGaze;
-    end
-end
-end
+        function callbackPupilloTcp(pupillo, client, event)
+            persistent time_mirror_update
+            if client.NumBytesAvailable
+                if isempty(time_mirror_update), time_mirror_update=GetSecs; end
+                % pupillo = client.UserData;
+                json = client.read(client.NumBytesAvailable, 'char');
+                json = strsplit(json, '}{'); % pupillo does not send newlines...                json{1}(1) = [];
+                json{end}(end) = [];
+                json{1}(1) = [];
+                cellfun(@(x)callbackPupilloTcpResponseHandler(pupillo, x), json)
+                % disp(0)
+                % disp(json)
+
+            end
+            function callbackPupilloTcpResponseHandler(pupillo, json)
+                
+                data = jsondecode(['{' json '}']);
+                % check what the data received is about
+                assert(isfield(data, 'a'), 'expected field "a" in pupillo tcp packet not found, dropping the callback')
+                switch data.a
+                    case 'frameData'
+                        if ~isempty(pupillo.last_sample)
+                            nSample = pupillo.last_sample.nSample + 1;
+                        else
+                            nSample=1;
+                        end
+                        if data.s0.gaze.x==-1 || data.s0.gaze.y==-1   % original pupillo missing values
+                            x=pupillo.MISSING_DATA;
+                            y=pupillo.MISSING_DATA;
+                            valid=false;
+                        else
+                            x=round(data.s0.gaze.x*pupillo.screen_width);
+                            y=round(data.s0.gaze.y*pupillo.screen_height);
+                            valid=true;
+                        end
+                        pupillo.last_sample = struct(valid=valid, eye_used=0, time=data.t, x=x, y=y, n=nSample);
+                        pause(0.0001)
+                        if time_mirror_update - GetSecs > 0.06
+                            pupillo.updataGaze;     % method in eyetracker interface
+                            time_mirror_update = GetSecs;
+                        end
+                    case 'camerasList'
+                        fprintf('camera list:\n%s\n', json)
+                    otherwise
+                        json
+                end
+            end
+        end
         function write(~, varargin)
             % not implemented yet, print on screen instead
             fprintf('[%s]: ', string(datetime('now', Format='uuuu-MM-dd HH:mm:ss.SSS')))
