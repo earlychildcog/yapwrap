@@ -62,7 +62,7 @@ classdef PupilloControlClassBase < EyetrackingControlClassBase
             msg = jsonencode(struct(a="newSession", p=[id, path_, false]));
             pupillo.client.write(msg)
             % start also the camera
-            pupillo.client.write('{"a":"cameraStatus","p":["2247011"]}')
+            pupillo.client.write('{"a":"selectCamera","p":["2247011"]}')
         end
         % in the future we will set the trial arguments automatically through the trialcontrolclass
         function startrec(pupillo, trialId, filename)

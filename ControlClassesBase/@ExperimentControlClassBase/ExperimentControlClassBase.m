@@ -2,37 +2,31 @@ classdef ExperimentControlClassBase < handle
     % Some description
     properties
         % experiment session settings
-        name            = 'cur';
-        subject         = [];
-        session         = [];
-        sessionNo       = [];
-        group           = [];
-        trialN          = [];
-        blockN          = [];
+        expname         char = '';
+        session         char = '';
+        time_start      datetime = datetime('now', Format='uuuu-MM-dd''T''HH:mm:ss.SSS', TimeZone='local')
+        group           char = '';
+        trialN          double = [];
+        blockN          double = [];
         trialVars       = {};
-        framedur        = 0.033;
-        offset          = 0.011;
+        framedur        double = 0.033;
+        offset          double = 0.011;
         condList        = {};
         prestype        = {};
-        debug           = false;
+        debug           uint8 = 0;
 
-        settings        = struct;
-
-        config          = 'default_config'
-
-%         log                 {mustBeA(log,'LogControlClass')}        % log settings
-        screen              ScreenControlClassBase      = ScreenControlClassBase  % screen settings
-        sound               SoundControlClassBase       = SoundControlClassBase   % sound settings
-        keyboard            KeyControlClassBase         = KeyControlClassBase     % keyboard settings
-        image               ImageControlClassBase       = ImageControlClassBase   % image settings
-        trial               TrialControlClassBase       = TrialControlClassBase   % trial settings
-        eyetracker             % eyelink or pupillo?
-        eeg                 EegControlClassBase         = EegControlClassBase      % EEG settings
-        log                 LogControlClassBase         = LogControlClass
+        settings        struct = struct
+        screen          ScreenControlClassBase      = ScreenControlClassBase  % screen settings
+        sound           SoundControlClassBase       = SoundControlClassBase   % sound settings
+        keyboard        KeyControlClassBase         = KeyControlClassBase     % keyboard settings
+        image           ImageControlClassBase       = ImageControlClassBase   % image settings
+        trial           TrialControlClassBase       = TrialControlClassBase   % trial settings
+        eyetracker      EyetrackingControlClassBase = PupilloControlClassBase  % eyelink or pupillo?
+        eeg             EegControlClassBase         = EegControlClassBase      % EEG settings
+        log             LogControlClassBase         = LogControlClass
     end
     methods
         function xp = ExperimentControlClassBaseBase(status)
-
             xp.image    = ImageControlClassBase;
             xp.screen   = ScreenControlClassBase;
             xp.eyetracker = PupilloControlClassBase;
@@ -46,41 +40,6 @@ classdef ExperimentControlClassBase < handle
             else
                 xp.init
             end
-        end
-
-        % prompt for experiment name
-        function getExpName(xp)
-            xp.name = 'curE';
-        end
-
-        % prompt for subject/session name
-        function setSubjNo(xp)
-            subjno = 0;
-            sessionId = '';
-            listSessions = {'a' 'b' 'c' 'p'};
-            while subjno == 0
-                while isempty(subjno) || subjno <= 0 || subjno > 499
-                    subjno = round(input('\ngive subject number (1-499):'));
-                end
-                while isempty(sessionId) || ~ismember(sessionId, listSessions)
-                    sessionId = input(['\ngive sessionid (' [listSessions{:}] '):'],'s');
-                end
-                edfname = sprintf('%s%.3d%c.edf', xp.name, subjno, sessionId);
-                if exist(fullfile(xp.eyetracker.edffolder, edfname),'file')>0
-                    warning('edf file for subject number %d session %c already exists, please choose another number', subjno, sessionId)
-                    subjno = 0;
-                    sessionId = '';
-                end
-            end
-            xp.subject = subjno;
-            xp.session = sessionId;
-            xp.sessionNo = find([listSessions{:}] == sessionId);
-            if xp.sessionNo == 4
-                xp.sessionNo = 1;
-            end
-
-            % careful: edf filename must be up to 8 letters (without the extension)
-            xp.eyetracker.savefile = edfname;
         end
         function init(xp)
             %get information for this session
@@ -99,7 +58,7 @@ classdef ExperimentControlClassBase < handle
             elseif ~isfolder('logs')
                 mkdir('logs')
             end
-            diary(sprintf('logs/debug/%s_%s.log', xp.name, string(datetime('now', Format="uuuuMMdd"))));     % a basic log of command line trash
+            diary(sprintf('logs/debug/%s_%s.log', xp.expname, string(datetime('now', Format="uuuuMMdd"))));     % a basic log of command line trash
 
             if ~xp.debug            % unless we operate in debug mode, we disable mouse cursor and keyboard input
                 ListenChar(2);      % Disable keyboard input messing up in the command window/script
@@ -111,9 +70,9 @@ classdef ExperimentControlClassBase < handle
 
             xp.sound.init;          % initialise sound
 
-            fprintf('\n****************************************\nExperiment %s\n',xp.name);
+            fprintf('\n****************************************\nExperiment %s\n',xp.expname);
             fprintf('%s\n',string(datetime('now', Format='uuuu-MM-dd''T''HH:mm:ss.SSS')));
-            fprintf('Subject %s\n\n',xp.subject);
+            fprintf('Session %s\n\n',xp.session);
 
             xp.eyetracker.screen = xp.screen;
             xp.eyetracker.trial = xp.trial;
@@ -138,10 +97,6 @@ classdef ExperimentControlClassBase < handle
 %             clear ExperimentControlClass
         end
 
-        % function to load configuration settings file
-        function loadconfig(xp)
-            eval([xp.config '(xp)']);                   % HORRIBLE need to change that later
-        end
 
         %% screen control functions
 
@@ -257,30 +212,6 @@ classdef ExperimentControlClassBase < handle
             %     xp.screen.draw_text = text_;
             % end
         end
-        % MOVING TO EYETRACKER "INTERFACE" AS METHOD
-        function updateGaze(xp)
-            % updates the gaze
-            if ~isempty(xp.screen.mirror)
-                % Screen('CopyWindow',xp.screen.monitor(1).win,xp.screen.monitor(1).offwin, xp.screen.monitor(1).rect, xp.screen.monitor(1).offrect)                                   % win1 -> offwin1
-                Screen('CopyWindow',xp.screen.monitor(1).offwin,xp.screen.monitor(2).offwin, xp.screen.monitor(1).offrect, xp.screen.monitor(2).offrect)                 % offwin1 -> offwin2
-                % if pupillo is used, plot gaze
-                if xp.eyetracker.status && ~isempty(xp.eyetracker.last_sample)
-                    pause(0.0001)
-                    x = xp.eyetracker.last_sample.x(1);
-                    y = xp.eyetracker.last_sample.y(1);
-                    Screen('glPoint', xp.screen.monitor(2).offwin, [0 255 0], x, y, 25);
-                end
-                % draw roi(s)
-                if ~isempty(xp.screen.draw_roi)
-                    Screen('FrameRect', xp.screen.monitor(2).offwin, xp.screen.draw_colour, xp.screen.draw_roi);
-                end
-                if ~isempty(xp.screen.draw_text)
-                    Screen('DrawText', xp.screen.monitor(2).offwin, xp.screen.draw_text, 100, 100);
-                end
-                Screen('CopyWindow',xp.screen.monitor(2).offwin,xp.screen.monitor(2).win, xp.screen.monitor(2).offrect, xp.screen.monitor(2).rect)     % offwin2 -> win2
-                Screen('Flip',xp.screen.monitor(xp.screen.mirror).win, 0, dontclear);
-            end
-        end
         %% experiment control functions
         function state = pause(xp)
             xp.suspend;
@@ -333,7 +264,6 @@ classdef ExperimentControlClassBase < handle
         end
 
         function state = waitSpace(xp)
-
             QKEY = KbName('q');
             SPACEKEY = KbName('space');
             while 1

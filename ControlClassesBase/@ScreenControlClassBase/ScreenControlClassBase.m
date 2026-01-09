@@ -14,7 +14,7 @@ classdef ScreenControlClassBase < handle
         full
         refrate
         skipsynccheck           = 1;
-        monitorId        string {mustBeMember(monitorId, ["eyelink", "tv", "other"])}  = "eyelink"
+        metadata        struct  % metadata to show on the screen every time the screen is flipped
     end
     properties (Hidden)
         time_mirror_update
