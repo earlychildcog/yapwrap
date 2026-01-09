@@ -74,7 +74,7 @@ if xp.eyetracker.status == 1
     if eye_used(1) ~= -1 % do we know which eye to use yet?
         for iEye = 1:length(eye_used)
             % if we do, get current gaze position from sample
-            if verbose
+            if verbose && xp.debug > 1      % we do not want all this cl polution with just normal debug
                 fprintf('[%.4f gaze] eye %d:%f %f %.4f\n', GetSecs, eye_used(iEye), x(iEye), y(iEye), timeFixated);
             end
             % do we have valid data and is the pupil visible?
