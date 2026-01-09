@@ -10,8 +10,8 @@ classdef PupilloControlClassBase < EyetrackingControlClassBase
         calibrationTable table
         roiCalib        % the roi around the calibration point for drawing on control screen
         roiColour
-        buttonCalib = KbName('SPACE')
-        screen_width = 1920;
+        buttonCalib   = KbName('SPACE')
+        screen_width  = 1920;
         screen_height = 1080;
         screen        ScreenControlClassBase % Reference to screen control class
         trial         TrialControlClassBase  % Reference to trial control class
@@ -128,7 +128,7 @@ classdef PupilloControlClassBase < EyetrackingControlClassBase
             end
         end
 
-        function callbackPupilloTcp(pupillo, client, event)
+        function callbackPupilloTcp(pupillo, client, ~)
             persistent time_mirror_update
             if client.NumBytesAvailable
                 if isempty(time_mirror_update), time_mirror_update=GetSecs; end
@@ -138,12 +138,8 @@ classdef PupilloControlClassBase < EyetrackingControlClassBase
                 json{end}(end) = [];
                 json{1}(1) = [];
                 cellfun(@(x)callbackPupilloTcpResponseHandler(pupillo, x), json)
-                % disp(0)
-                % disp(json)
-
             end
             function callbackPupilloTcpResponseHandler(pupillo, json)
-                
                 data = jsondecode(['{' json '}']);
                 % check what the data received is about
                 assert(isfield(data, 'a'), 'expected field "a" in pupillo tcp packet not found, dropping the callback')
@@ -163,7 +159,13 @@ classdef PupilloControlClassBase < EyetrackingControlClassBase
                             y=round(data.s0.gaze.y*pupillo.screen_height);
                             valid=true;
                         end
-                        pupillo.last_sample = struct(valid=valid, eye_used=0, time=data.t, x=x, y=y, n=nSample);
+                        pupillo.last_sample = struct( ...
+                            valid=valid, ...
+                            eye_used=0, ...
+                            time=data.t/1000 + pupillo.offset_getsecs, ...  % unix time to getsecs-system-time
+                            x=x, ...
+                            y=y, ...
+                            n=nSample);
                         pause(0.0001)
                         if time_mirror_update - GetSecs > 0.06
                             pupillo.updataGaze;     % method in eyetracker interface
@@ -172,7 +174,7 @@ classdef PupilloControlClassBase < EyetrackingControlClassBase
                     case 'camerasList'
                         fprintf('camera list:\n%s\n', json)
                     otherwise
-                        json
+                        %json
                 end
             end
         end
